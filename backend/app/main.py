@@ -1,5 +1,6 @@
 from fastapi import APIRouter, FastAPI
 
+from app.analytics.router import router as analytics_router
 from app.commands.router import router as commands_router
 from app.core.config import get_settings
 from app.core.logging import configure_logging
@@ -42,6 +43,7 @@ def create_app() -> FastAPI:
     v1.include_router(search_router)
     v1.include_router(notes_router)
     v1.include_router(commands_router)
+    v1.include_router(analytics_router)
     app.include_router(v1)
     return app
 
