@@ -79,3 +79,15 @@ def test_snippet_windows_the_match() -> None:
     assert excerpt is not None
     assert excerpt.startswith("…") and excerpt.endswith("…") and "needle" in excerpt
     assert snippet("nothing here", "needle") is None
+
+
+def test_notes_match_title_folder_and_tags_but_never_the_body(client: TestClient) -> None:
+    folder = client.post("/api/v1/note-folders", json={"name": "Databases"}).json()
+    client.post("/api/v1/notes", json={"title": "Normal forms", "folder_id": folder["id"]})
+    client.post("/api/v1/notes", json={"title": "Indexes", "tags": ["dbms"]})
+    client.post("/api/v1/notes", json={"title": "Diary", "content": "dbms exam was hard"})
+
+    assert hits(client, "database", kind="note") == [("note", "Normal forms")]
+    assert hits(client, "dbms", kind="note") == [("note", "Indexes")]
+    body = client.get(SEARCH, params={"q": "normal"}).json()["hits"][0]
+    assert (body["snippet"], body["context"]) == (None, "Databases")

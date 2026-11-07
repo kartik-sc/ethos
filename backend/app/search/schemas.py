@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from app.core.life_areas import LifeArea
 
-SearchKind = Literal["task", "project", "goal", "habit", "inbox"]
+SearchKind = Literal["task", "project", "goal", "habit", "note", "inbox"]
 StatusFilter = Literal["open", "closed"]
 
 

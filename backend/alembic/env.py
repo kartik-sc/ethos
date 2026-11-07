@@ -5,6 +5,7 @@ from sqlalchemy import create_engine, pool
 import app.goals.models
 import app.habits.models
 import app.inbox.models
+import app.notes.models
 import app.preferences.models
 import app.projects.models
 import app.quotes.models

@@ -6,6 +6,7 @@ from app.dashboard.router import router as dashboard_router
 from app.goals.router import router as goals_router
 from app.habits.router import router as habits_router
 from app.inbox.router import router as inbox_router
+from app.notes.router import router as notes_router
 from app.preferences.router import router as preferences_router
 from app.projects.router import router as projects_router
 from app.quotes.router import router as quotes_router
@@ -38,6 +39,7 @@ def create_app() -> FastAPI:
     v1.include_router(quotes_router)
     v1.include_router(dashboard_router)
     v1.include_router(search_router)
+    v1.include_router(notes_router)
     app.include_router(v1)
     return app
 

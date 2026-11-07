@@ -1,5 +1,5 @@
 """One search across record types. Plain case-insensitive substring matching is enough at a
-single owner's scale; Notes will join with title, folder and tag matching only (never bodies)."""
+single owner's scale. Notes match on title, folder name and tags only: bodies are never searched."""
 
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -12,6 +12,7 @@ from app.core.life_areas import LifeArea
 from app.goals.models import Goal
 from app.habits.models import Habit
 from app.inbox.models import InboxItem
+from app.notes.models import Folder, Note, Tag, note_tags
 from app.projects.models import Project
 from app.search.schemas import SearchHit, SearchKind, SearchResults, StatusFilter
 from app.tasks.models import Task, TaskStatus
@@ -156,6 +157,48 @@ def _habits(session: Session, query: str, filters: SearchFilters) -> list[Search
     ]
 
 
+def _notes(session: Session, query: str, filters: SearchFilters) -> list[SearchHit]:
+    if filters.area or filters.status == "closed":
+        return []  # notes have no area or status
+    pattern = _pattern(query)
+    tagged = (
+        select(note_tags.c.note_id)
+        .join(Tag, Tag.id == note_tags.c.tag_id)
+        .where(Tag.name.ilike(pattern, escape="\\"))
+    )
+    statement = (
+        select(Note)
+        .outerjoin(Folder, Folder.id == Note.folder_id)
+        .where(
+            Note.deleted_at.is_(None),
+            or_(_matches(pattern, Note.title, Folder.name), Note.id.in_(tagged)),
+        )
+        .order_by(Note.updated_at.desc())
+        .limit(PER_KIND_LIMIT + 1)
+    )
+    return [
+        SearchHit(
+            kind="note",
+            id=note.id,
+            title=note.title,
+            snippet=None,  # never surface body text
+            area=None,
+            status="note",
+            date=None,
+            context=" · ".join(
+                part
+                for part in (
+                    note.folder.name if note.folder else None,
+                    *(f"#{t.name}" for t in note.tags),
+                )
+                if part
+            )
+            or None,
+        )
+        for note in session.scalars(statement)
+    ]
+
+
 def _inbox(session: Session, query: str, filters: SearchFilters) -> list[SearchHit]:
     if filters.area:
         return []  # captures have no area yet
@@ -198,6 +241,8 @@ def search(
         groups["goal"] = _goals(session, query, filters)
     if "habit" in filters.kinds:
         groups["habit"] = _habits(session, query, filters)
+    if "note" in filters.kinds:
+        groups["note"] = _notes(session, query, filters)
     if "inbox" in filters.kinds:
         groups["inbox"] = _inbox(session, query, filters)
 
