@@ -63,11 +63,12 @@ export function daysBetween(from: string, to: string): number {
   return Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000);
 }
 
-export function formatShortDate(isoDate: string): string {
+export function formatShortDate(isoDate: string, withYear = false): string {
   return new Intl.DateTimeFormat("en-GB", {
-    weekday: "short",
+    weekday: withYear ? undefined : "short",
     day: "numeric",
     month: "short",
+    year: withYear ? "numeric" : undefined,
     timeZone: "UTC",
   }).format(new Date(`${isoDate}T00:00:00Z`));
 }

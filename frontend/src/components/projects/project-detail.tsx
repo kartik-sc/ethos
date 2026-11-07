@@ -1,12 +1,13 @@
 "use client";
 
-import { ArrowLeft, FolderX, Pencil, Trash2 } from "lucide-react";
-import Link from "next/link";
+import { FolderX, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
+import { BackLink } from "@/components/back-link";
 import { EmptyState } from "@/components/empty-state";
 import { fieldClass, labelClass } from "@/components/form-controls";
+import { GoalSelect } from "@/components/goals/goal-select";
 import { TaskBoard } from "@/components/tasks/task-board";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,24 +22,13 @@ import { cn } from "@/lib/utils";
 
 import { ProjectProgress } from "./project-progress";
 
-function BackLink() {
-  return (
-    <Link
-      href="/projects"
-      className="inline-flex w-fit items-center gap-1.5 rounded-md font-mono text-[0.6875rem] text-faint outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      <ArrowLeft aria-hidden="true" className="size-3" />
-      projects
-    </Link>
-  );
-}
-
 function ProjectEditor({ project, onClose }: { project: Project; onClose: () => void }) {
   const update = useUpdateProject();
   const [title, setTitle] = useState(project.title);
   const [description, setDescription] = useState(project.description ?? "");
   const [area, setArea] = useState<LifeArea | "">(project.area ?? "");
   const [dueDate, setDueDate] = useState(project.due_date ?? "");
+  const [goalId, setGoalId] = useState(project.goal?.id ?? "");
 
   function save(event: FormEvent) {
     event.preventDefault();
@@ -48,6 +38,7 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
       description: description.trim() || null,
       area: area || null,
       due_date: dueDate || null,
+      ...((goalId || null) !== (project.goal?.id ?? null) && { goal_id: goalId || null }),
     };
     update.mutate({ id: project.id, changes }, { onSuccess: onClose });
   }
@@ -81,7 +72,13 @@ function ProjectEditor({ project, onClose }: { project: Project; onClose: () => 
           className={`${fieldClass} h-auto resize-y py-2 leading-relaxed`}
         />
       </label>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <GoalSelect
+          value={goalId}
+          onChange={setGoalId}
+          current={project.goal}
+          className={`${labelClass} col-span-2 sm:col-span-1`}
+        />
         <label className={labelClass}>
           Deadline
           <input
@@ -181,7 +178,7 @@ export function ProjectDetail({ id }: { id: string }) {
   if (project.isPending) {
     return (
       <div className="flex flex-col gap-6" aria-busy="true">
-        <BackLink />
+        <BackLink href="/projects" label="projects" />
         <Skeleton className="h-8 w-72" />
         <Skeleton className="h-4 w-96 max-w-full" />
         <Skeleton className="h-1 w-full" />
@@ -193,7 +190,7 @@ export function ProjectDetail({ id }: { id: string }) {
     const missing = project.error instanceof ApiError && project.error.status === 404;
     return (
       <div className="flex flex-col gap-6">
-        <BackLink />
+        <BackLink href="/projects" label="projects" />
         <EmptyState
           icon={FolderX}
           title={missing ? "Project not found" : "Project couldn't load"}
@@ -219,7 +216,7 @@ export function ProjectDetail({ id }: { id: string }) {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-5">
-        <BackLink />
+        <BackLink href="/projects" label="projects" />
         {editing ? (
           <ProjectEditor project={data} onClose={() => setEditing(false)} />
         ) : (
@@ -256,7 +253,7 @@ export function ProjectDetail({ id }: { id: string }) {
           </header>
         )}
       </div>
-      <TaskBoard projectId={data.id} />
+      <TaskBoard scope={{ projectId: data.id }} />
     </div>
   );
 }

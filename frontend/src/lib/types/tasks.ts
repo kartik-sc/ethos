@@ -1,4 +1,5 @@
 // Mirrors backend/app/tasks/schemas.py.
+import type { GoalRef } from "./goals";
 import type { ProjectRef } from "./projects";
 
 export type TaskStatus = "open" | "done" | "cancelled";
@@ -18,6 +19,9 @@ export interface Task {
   planned_minutes: number | null;
   project_id: string | null;
   project: ProjectRef | null;
+  goal_id: string | null;
+  /** Null when unlinked or when the goal is in Trash. */
+  goal: GoalRef | null;
   created_at: string;
   updated_at: string;
   completed_at: string | null;
@@ -33,6 +37,7 @@ export interface TaskCreate {
   due_date?: string | null;
   planned_minutes?: number | null;
   project_id?: string | null;
+  goal_id?: string | null;
 }
 
 export type TaskUpdate = Partial<TaskCreate> & { status?: TaskStatus };

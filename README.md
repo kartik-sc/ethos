@@ -143,6 +143,17 @@ FastAPI serves OpenAPI docs at `/api/docs` outside production.
 | DELETE | `/api/v1/projects/{id}` | Move the project and its live tasks to Trash together |
 | POST | `/api/v1/projects/{id}/restore` | Restore the project and the tasks trashed with it |
 
+| GET | `/api/v1/goals?view=active\|trash` | Goals with derived progress |
+| POST | `/api/v1/goals` | Create a goal |
+| GET / PATCH | `/api/v1/goals/{id}` | Read or partially update a goal |
+| DELETE | `/api/v1/goals/{id}` | Move the goal to Trash; its projects and tasks are untouched |
+| POST | `/api/v1/goals/{id}/restore` | Restore the goal; its links reappear |
+
+Goal progress counts live, non-cancelled tasks. A task counts toward its own `goal_id`, or if it
+has none, its project's goal, so nothing is counted twice. A goal in Trash reads as `goal: null`
+on linked records while the stored link is kept for restore. Projects and tasks accept
+`goal_id`; `GET /api/v1/projects?goal_id=…` and `GET /api/v1/tasks?goal_id=…` filter by it.
+
 Tasks accept an optional `project_id` (`GET /api/v1/tasks?project_id=…` filters by it). A task
 whose project is in Trash cannot be restored on its own (`409`); restore the project instead.
 Group restore matches on the shared `deleted_at` timestamp, so tasks deleted individually before

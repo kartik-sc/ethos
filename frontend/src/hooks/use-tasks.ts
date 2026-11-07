@@ -3,17 +3,25 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiSend } from "@/lib/api";
 import type { NextAction, Task, TaskCreate, TaskUpdate, TaskView } from "@/lib/types/tasks";
 
+/** Narrows a task list to one project or to tasks linked directly to one goal. */
+export interface TaskScope {
+  projectId?: string;
+  goalId?: string;
+}
+
 export const taskKeys = {
   all: ["tasks"] as const,
-  view: (view: TaskView, projectId?: string) => ["tasks", view, projectId ?? "all"] as const,
+  view: (view: TaskView, scope: TaskScope = {}) =>
+    ["tasks", view, scope.projectId ?? "-", scope.goalId ?? "-"] as const,
   nextAction: ["tasks", "next-action"] as const,
 };
 
-export function useTasks(view: TaskView, projectId?: string) {
+export function useTasks(view: TaskView, scope: TaskScope = {}) {
   const query = new URLSearchParams({ view });
-  if (projectId) query.set("project_id", projectId);
+  if (scope.projectId) query.set("project_id", scope.projectId);
+  if (scope.goalId) query.set("goal_id", scope.goalId);
   return useQuery({
-    queryKey: taskKeys.view(view, projectId),
+    queryKey: taskKeys.view(view, scope),
     queryFn: ({ signal }) => apiGet<Task[]>(`/tasks?${query}`, { signal }),
   });
 }
@@ -55,11 +63,12 @@ function useTaskMutation<TVariables>(
     onError: (_error, _variables, context) => {
       for (const [key, tasks] of context?.snapshot ?? []) queryClient.setQueryData(key, tasks);
     },
-    // Project task counts change with every task change too.
+    // Project counts and goal progress change with every task change too.
     onSettled: () =>
       Promise.all([
         queryClient.invalidateQueries({ queryKey: taskKeys.all }),
         queryClient.invalidateQueries({ queryKey: ["projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["goals"] }),
       ]),
   });
 }

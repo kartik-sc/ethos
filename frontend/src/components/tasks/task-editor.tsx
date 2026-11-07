@@ -9,6 +9,7 @@ import { LIFE_AREAS, PRIORITIES } from "@/lib/tasks";
 import type { LifeArea, Task, TaskPriority, TaskUpdate } from "@/lib/types/tasks";
 
 import { fieldClass, labelClass } from "@/components/form-controls";
+import { GoalSelect } from "@/components/goals/goal-select";
 
 interface Draft {
   title: string;
@@ -18,6 +19,7 @@ interface Draft {
   area: LifeArea | "";
   planned_minutes: string;
   project_id: string;
+  goal_id: string;
 }
 
 function toDraft(task: Task): Draft {
@@ -29,6 +31,7 @@ function toDraft(task: Task): Draft {
     area: task.area ?? "",
     planned_minutes: task.planned_minutes?.toString() ?? "",
     project_id: task.project_id ?? "",
+    goal_id: task.goal?.id ?? "",
   };
 }
 
@@ -42,9 +45,12 @@ export function diffDraft(task: Task, draft: Draft): TaskUpdate {
     area: draft.area || null,
     planned_minutes: draft.planned_minutes ? Number(draft.planned_minutes) : null,
     project_id: draft.project_id || null,
+    goal_id: draft.goal_id || null,
   };
+  // A goal in Trash reads as no goal; comparing against that keeps the link intact on save.
+  const current: Record<string, unknown> = { ...task, goal_id: task.goal?.id ?? null };
   return Object.fromEntries(
-    Object.entries(next).filter(([key, value]) => task[key as keyof Task] !== value),
+    Object.entries(next).filter(([key, value]) => current[key] !== value),
   ) as TaskUpdate;
 }
 
@@ -108,8 +114,8 @@ export function TaskEditor({ task, onClose }: TaskEditorProps) {
         />
       </label>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <label className={`${labelClass} col-span-2 sm:col-span-1`}>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <label className={labelClass}>
           Project
           <select
             value={draft.project_id}
@@ -127,6 +133,14 @@ export function TaskEditor({ task, onClose }: TaskEditorProps) {
             ))}
           </select>
         </label>
+        <GoalSelect
+          value={draft.goal_id}
+          onChange={(goalId) => set("goal_id", goalId)}
+          current={task.goal}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <label className={labelClass}>
           Due
           <input

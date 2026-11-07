@@ -17,6 +17,8 @@ function task(title: string, due_date: string | null): Task {
     planned_minutes: null,
     project_id: null,
     project: null,
+    goal_id: null,
+    goal: null,
     created_at: "2026-11-01T00:00:00Z",
     updated_at: "2026-11-01T00:00:00Z",
     completed_at: null,
@@ -59,6 +61,7 @@ describe("describeDue", () => {
     [TODAY, "Today", "soon"],
     ["2026-11-08", "Tomorrow", "soon"],
     ["2026-11-12", "Thu 12 Nov", "later"],
+    ["2027-03-31", "31 Mar 2027", "later"],
   ] as const)("%s reads as %s", (due, text, tone) => {
     expect(describeDue(due, TODAY)).toEqual({ text, tone });
   });

@@ -9,10 +9,12 @@ export const projectKeys = {
   detail: (id: string) => ["projects", "detail", id] as const,
 };
 
-export function useProjects(view: ProjectView = "active") {
+export function useProjects(view: ProjectView = "active", goalId?: string) {
+  const query = new URLSearchParams({ view });
+  if (goalId) query.set("goal_id", goalId);
   return useQuery({
-    queryKey: projectKeys.view(view),
-    queryFn: ({ signal }) => apiGet<Project[]>(`/projects?view=${view}`, { signal }),
+    queryKey: [...projectKeys.view(view), goalId ?? "-"],
+    queryFn: ({ signal }) => apiGet<Project[]>(`/projects?${query}`, { signal }),
   });
 }
 
@@ -35,6 +37,7 @@ function useProjectMutation<TVariables, TResult>(
       Promise.all([
         queryClient.invalidateQueries({ queryKey: projectKeys.all }),
         queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+        queryClient.invalidateQueries({ queryKey: ["goals"] }),
       ]),
   });
 }
@@ -65,6 +68,7 @@ export function useTrashProject(onTrashed?: () => void) {
       Promise.all([
         queryClient.invalidateQueries({ queryKey: ["projects", "list"] }),
         queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+        queryClient.invalidateQueries({ queryKey: ["goals"] }),
       ]),
   });
 }

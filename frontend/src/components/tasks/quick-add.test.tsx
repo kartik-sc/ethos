@@ -43,6 +43,7 @@ describe("QuickAdd", () => {
       priority: "high",
       due_date: null,
       project_id: null,
+      goal_id: null,
     });
   });
 

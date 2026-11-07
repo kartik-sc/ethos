@@ -1,4 +1,5 @@
 // Mirrors backend/app/projects/schemas.py.
+import type { GoalRef } from "./goals";
 import type { LifeArea } from "./tasks";
 
 export type ProjectView = "active" | "trash";
@@ -14,6 +15,8 @@ export interface Project {
   description: string | null;
   area: LifeArea | null;
   due_date: string | null;
+  goal_id: string | null;
+  goal: GoalRef | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -25,6 +28,7 @@ export interface ProjectCreate {
   description?: string | null;
   area?: LifeArea | null;
   due_date?: string | null;
+  goal_id?: string | null;
 }
 
 export type ProjectUpdate = Partial<ProjectCreate>;

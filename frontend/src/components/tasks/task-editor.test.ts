@@ -15,6 +15,8 @@ const task: Task = {
   planned_minutes: null,
   project_id: null,
   project: null,
+  goal_id: null,
+  goal: null,
   created_at: "2026-11-01T00:00:00Z",
   updated_at: "2026-11-01T00:00:00Z",
   completed_at: null,
@@ -30,6 +32,7 @@ const unchanged = {
   area: "academics" as const,
   planned_minutes: "",
   project_id: "",
+  goal_id: "",
 };
 
 describe("diffDraft", () => {
@@ -50,5 +53,14 @@ describe("diffDraft", () => {
 
   it("treats whitespace-only notes as no notes", () => {
     expect(diffDraft(task, { ...unchanged, description: "   " })).toEqual({});
+  });
+});
+
+describe("diffDraft with a goal in Trash", () => {
+  it("keeps the hidden goal link when other fields are saved", () => {
+    const linkedToTrashedGoal: Task = { ...task, goal_id: "g1", goal: null };
+    expect(diffDraft(linkedToTrashedGoal, { ...unchanged, title: "Renamed" })).toEqual({
+      title: "Renamed",
+    });
   });
 });

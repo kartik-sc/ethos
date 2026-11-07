@@ -28,7 +28,8 @@ export function describeDue(dueDate: string, today: string): DueLabel {
   if (days < 0) return { text: days === -1 ? "Yesterday" : `${-days}d overdue`, tone: "overdue" };
   if (days === 0) return { text: "Today", tone: "soon" };
   if (days === 1) return { text: "Tomorrow", tone: "soon" };
-  return { text: formatShortDate(dueDate), tone: "later" };
+  const otherYear = dueDate.slice(0, 4) !== today.slice(0, 4);
+  return { text: formatShortDate(dueDate, otherYear), tone: "later" };
 }
 
 export type SectionKey = "overdue" | "today" | "week" | "later" | "undated";

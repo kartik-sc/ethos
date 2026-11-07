@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { ViewTabs } from "@/components/view-tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useRestoreTask, useTasks, useTrashTask } from "@/hooks/use-tasks";
+import { type TaskScope, useRestoreTask, useTasks, useTrashTask } from "@/hooks/use-tasks";
 import { useToday } from "@/hooks/use-today";
 import { groupOpenTasks, type TaskSection } from "@/lib/tasks";
 import type { Task, TaskView } from "@/lib/types/tasks";
@@ -60,11 +60,12 @@ interface UndoState {
   timer: ReturnType<typeof setTimeout>;
 }
 
-export function TaskBoard({ projectId }: { projectId?: string }) {
+export function TaskBoard({ scope = {} }: { scope?: TaskScope }) {
   const [view, setView] = useState<TaskView>("open");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [undo, setUndo] = useState<UndoState | null>(null);
-  const tasks = useTasks(view, projectId);
+  const tasks = useTasks(view, scope);
+  const scoped = Boolean(scope.projectId ?? scope.goalId);
   const today = useToday();
   const trash = useTrashTask();
   const restore = useRestoreTask();
@@ -83,11 +84,11 @@ export function TaskBoard({ projectId }: { projectId?: string }) {
   }
 
   const emptyCopy =
-    projectId && view === "open"
+    scoped && view === "open"
       ? {
           ...empty.open,
           title: "No open tasks here",
-          body: "Tasks added above belong to this project.",
+          body: `Tasks added above belong to this ${scope.projectId ? "project" : "goal"}.`,
         }
       : empty[view];
 
@@ -100,7 +101,7 @@ export function TaskBoard({ projectId }: { projectId?: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <QuickAdd projectId={projectId} />
+      <QuickAdd scope={scope} />
 
       <div className="flex items-center justify-between gap-3">
         <ViewTabs
@@ -169,7 +170,7 @@ export function TaskBoard({ projectId }: { projectId?: string }) {
                       expanded={expandedId === task.id}
                       onExpandedChange={(open) => setExpandedId(open ? task.id : null)}
                       onTrash={moveToTrash}
-                      showProject={!projectId}
+                      showProject={!scope.projectId}
                     />
                   ))}
                 </AnimatePresence>

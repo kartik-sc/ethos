@@ -4,10 +4,6 @@ import { primaryNav } from "@/lib/navigation";
 
 // Stand-in for modules not built yet. Each page swaps this out as its slice lands.
 const modules = {
-  goals: {
-    description: "Long-term objectives with progress derived from linked work and habits.",
-    empty: "Goals arrive with the Phase 1 workspace.",
-  },
   habits: {
     description: "Recurring commitments, occurrences and weekly consistency.",
     empty: "Habit tracking arrives with the Phase 1 workspace.",

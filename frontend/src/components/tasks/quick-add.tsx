@@ -3,7 +3,7 @@
 import { CalendarDays, Flag, LoaderCircle } from "lucide-react";
 import { type FormEvent, useRef, useState } from "react";
 
-import { useCreateTask } from "@/hooks/use-tasks";
+import { type TaskScope, useCreateTask } from "@/hooks/use-tasks";
 import type { TaskPriority } from "@/lib/types/tasks";
 import { cn } from "@/lib/utils";
 
@@ -19,7 +19,7 @@ const priorityText: Record<TaskPriority, string> = {
   low: "text-faint/60",
 };
 
-export function QuickAdd({ projectId }: { projectId?: string }) {
+export function QuickAdd({ scope = {} }: { scope?: TaskScope }) {
   const create = useCreateTask();
   const titleRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState("");
@@ -31,7 +31,13 @@ export function QuickAdd({ projectId }: { projectId?: string }) {
     const trimmed = title.trim();
     if (!trimmed || create.isPending) return;
     create.mutate(
-      { title: trimmed, priority, due_date: dueDate || null, project_id: projectId ?? null },
+      {
+        title: trimmed,
+        priority,
+        due_date: dueDate || null,
+        project_id: scope.projectId ?? null,
+        goal_id: scope.goalId ?? null,
+      },
       {
         onSuccess: () => {
           setTitle("");
