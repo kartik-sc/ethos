@@ -15,5 +15,8 @@ export function goalSummary(progress: Progress): string {
   if (progress.projects > 0) {
     parts.push(`${progress.projects} project${progress.projects === 1 ? "" : "s"}`);
   }
+  if (progress.habits > 0) {
+    parts.push(`${progress.habits} habit${progress.habits === 1 ? "" : "s"}`);
+  }
   return parts.join(" · ");
 }

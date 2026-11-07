@@ -149,6 +149,32 @@ FastAPI serves OpenAPI docs at `/api/docs` outside production.
 | DELETE | `/api/v1/goals/{id}` | Move the goal to Trash; its projects and tasks are untouched |
 | POST | `/api/v1/goals/{id}/restore` | Restore the goal; its links reappear |
 
+| GET | `/api/v1/habits?view=active\|trash` | Habits with today's state, streak, this week's progress and the last 7 days |
+| POST | `/api/v1/habits` | Create a habit |
+| GET / PATCH | `/api/v1/habits/{id}` | Read or partially update; the merged habit is re-validated as a whole |
+| DELETE | `/api/v1/habits/{id}` · POST `…/restore` | Trash and restore (history is kept) |
+| PUT / DELETE | `/api/v1/habits/{id}/logs/{date}` | Write or clear one day's entry; returns the fresh summary |
+| GET | `/api/v1/habits/{id}/history?weeks=12` | Whole weeks of day states, Monday first, for the heatmap |
+
+### Habit rules
+
+`app/habits/rules.py` holds the pure rules, tested without a database:
+
+- **Cadence:** `daily` on chosen weekdays, or `weekly` N times a week on any days.
+- **Measure:** `check`, `amount` (a unit and optional target per entry) or `span` (start and end
+  time; hours are derived and cross midnight, e.g. sleep).
+- **One entry per habit per day.** Missed days are derived from the schedule, never stored. An entry
+  below its target is *partial*: it shows, but does not count as done.
+- **Streaks:** daily habits count scheduled days back from today; rest days are skipped and an
+  unfinished today does not break the streak. Weekly habits count consecutive weeks that hit
+  their target; the current week only adds once it is met.
+- A habit starts on its creation day, or earlier if older days are backfilled.
+- The migration seeds the spec's protected daily LeetCode habit (120 min). *Protected* currently
+  means listed first and marked; enforcement against rescheduling arrives with calendar
+  scheduling in Phase 2.
+- Goals show how many habits link to them. Habit consistency is not folded into the goal's task
+  percentage, because the two measure different things.
+
 Goal progress counts live, non-cancelled tasks. A task counts toward its own `goal_id`, or if it
 has none, its project's goal, so nothing is counted twice. A goal in Trash reads as `goal: null`
 on linked records while the stored link is kept for restore. Projects and tasks accept

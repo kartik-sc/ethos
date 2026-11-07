@@ -18,7 +18,7 @@ export interface Goal {
   updated_at: string;
   deleted_at: string | null;
   /** Tasks linked directly or through a linked project; cancelled tasks excluded. */
-  progress: { done: number; total: number; projects: number };
+  progress: { done: number; total: number; projects: number; habits: number };
 }
 
 export interface GoalCreate {

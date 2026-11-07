@@ -7,12 +7,14 @@ import { type FormEvent, useState } from "react";
 
 import { BackLink } from "@/components/back-link";
 import { EmptyState } from "@/components/empty-state";
+import { RecentStrip } from "@/components/habits/recent-strip";
 import { fieldClass, labelClass } from "@/components/form-controls";
 import { ProjectProgress } from "@/components/projects/project-progress";
 import { TaskBoard } from "@/components/tasks/task-board";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGoal, useTrashGoal, useUpdateGoal } from "@/hooks/use-goals";
+import { useHabits } from "@/hooks/use-habits";
 import { useProjects, useUpdateProject } from "@/hooks/use-projects";
 import { useToday } from "@/hooks/use-today";
 import { ApiError } from "@/lib/api";
@@ -252,6 +254,38 @@ function LinkedProjects({ goalId }: { goalId: string }) {
   );
 }
 
+function LinkedHabits({ goalId }: { goalId: string }) {
+  const habits = useHabits("active", goalId);
+  if (habits.isPending || habits.isError || habits.data.length === 0) return null;
+
+  return (
+    <section aria-labelledby="goal-habits" className="flex flex-col gap-3">
+      <h2 id="goal-habits" className="micro-label px-1">
+        Habits
+      </h2>
+      <ul className="rounded-xl border border-border bg-card/80">
+        {habits.data.map((habit) => (
+          <li
+            key={habit.id}
+            className="flex items-center justify-between gap-4 border-b border-border px-4 py-3 last:border-b-0"
+          >
+            <Link
+              href="/habits"
+              className="min-w-0 truncate rounded-sm text-sm outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {habit.title}
+            </Link>
+            <RecentStrip days={habit.summary.recent} />
+            <span className="w-24 shrink-0 text-right font-mono text-[0.6875rem] text-faint tabular-nums">
+              {habit.summary.week_done}/{habit.summary.week_target} this week
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export function GoalDetail({ id }: { id: string }) {
   const goal = useGoal(id);
   const today = useToday();
@@ -339,6 +373,8 @@ export function GoalDetail({ id }: { id: string }) {
       </div>
 
       <LinkedProjects goalId={data.id} />
+
+      <LinkedHabits goalId={data.id} />
 
       <section aria-labelledby="goal-tasks" className="flex flex-col gap-3">
         <h2 id="goal-tasks" className="micro-label px-1">

@@ -55,7 +55,7 @@ export async function apiGet<T>(path: string, options: RequestOptions = {}): Pro
 }
 
 export async function apiSend<T = void>(
-  method: "POST" | "PATCH" | "DELETE",
+  method: "POST" | "PUT" | "PATCH" | "DELETE",
   path: string,
   body?: unknown,
 ): Promise<T> {

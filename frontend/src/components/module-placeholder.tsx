@@ -4,10 +4,6 @@ import { primaryNav } from "@/lib/navigation";
 
 // Stand-in for modules not built yet. Each page swaps this out as its slice lands.
 const modules = {
-  habits: {
-    description: "Recurring commitments, occurrences and weekly consistency.",
-    empty: "Habit tracking arrives with the Phase 1 workspace.",
-  },
   notes: {
     description: "Raw Markdown notes with folders, tags, wiki-links and backlinks.",
     empty: "The Notes library arrives with the Phase 1 workspace.",
