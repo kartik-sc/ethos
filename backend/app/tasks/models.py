@@ -10,6 +10,7 @@ from sqlalchemy import (
     SmallInteger,
     String,
     Text,
+    and_,
     func,
     text,
 )
@@ -17,6 +18,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base, string_enum
 from app.core.life_areas import LifeArea
+from app.goals.models import Goal
 from app.projects.models import Project
 
 
@@ -53,6 +55,9 @@ class Task(Base):
     project_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("projects.id", ondelete="CASCADE"), index=True
     )
+    goal_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("goals.id", ondelete="SET NULL"), index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -62,6 +67,11 @@ class Task(Base):
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     project: Mapped[Project | None] = relationship(lazy="joined")
+    goal: Mapped[Goal | None] = relationship(
+        primaryjoin=lambda: and_(Task.goal_id == Goal.id, Goal.deleted_at.is_(None)),
+        viewonly=True,
+        lazy="joined",
+    )
 
 
 class NextActionOverride(Base):

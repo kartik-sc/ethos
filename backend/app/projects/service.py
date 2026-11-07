@@ -5,6 +5,7 @@ from datetime import datetime
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
+from app.goals.service import ensure_live_goal
 from app.projects.models import Project
 from app.projects.schemas import ProjectCreate, ProjectUpdate, ProjectView, TaskCounts
 from app.tasks.models import Task, TaskStatus
@@ -14,8 +15,12 @@ class ProjectNotFoundError(Exception):
     pass
 
 
-def list_projects(session: Session, view: ProjectView) -> Sequence[Project]:
+def list_projects(
+    session: Session, view: ProjectView, goal_id: uuid.UUID | None = None
+) -> Sequence[Project]:
     query = select(Project)
+    if goal_id is not None:
+        query = query.where(Project.goal_id == goal_id)
     if view == "active":
         query = query.where(Project.deleted_at.is_(None)).order_by(
             Project.due_date.asc().nulls_last(), Project.created_at.desc()
@@ -55,6 +60,7 @@ def get_project(session: Session, project_id: uuid.UUID, *, trashed: bool = Fals
 
 
 def create_project(session: Session, data: ProjectCreate) -> Project:
+    ensure_live_goal(session, data.goal_id)
     project = Project(**data.model_dump())
     session.add(project)
     session.commit()
@@ -62,9 +68,13 @@ def create_project(session: Session, data: ProjectCreate) -> Project:
 
 
 def update_project(session: Session, project: Project, changes: ProjectUpdate) -> Project:
-    for name, value in changes.model_dump(exclude_unset=True).items():
+    fields = changes.model_dump(exclude_unset=True)
+    if "goal_id" in fields:
+        ensure_live_goal(session, fields["goal_id"])
+    for name, value in fields.items():
         setattr(project, name, value)
     session.commit()
+    session.refresh(project)  # reload the goal relationship if the link changed
     return project
 
 

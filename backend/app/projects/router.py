@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.db import get_session
+from app.goals.service import GoalUnavailableError
 from app.projects import service
 from app.projects.models import Project
 from app.projects.schemas import (
@@ -41,16 +42,21 @@ def _read_one(session: Session, project: Project) -> ProjectRead:
 
 @router.get("")
 def list_projects(
-    session: SessionDep, view: Annotated[ProjectView, Query()] = "active"
+    session: SessionDep,
+    view: Annotated[ProjectView, Query()] = "active",
+    goal_id: Annotated[uuid.UUID | None, Query()] = None,
 ) -> list[ProjectRead]:
-    projects = service.list_projects(session, view)
+    projects = service.list_projects(session, view, goal_id)
     counts = service.task_counts(session, (project.id for project in projects))
     return [_read(project, counts.get(project.id)) for project in projects]
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_project(data: ProjectCreate, session: SessionDep) -> ProjectRead:
-    return _read(service.create_project(session, data), None)
+    try:
+        return _read(service.create_project(session, data), None)
+    except GoalUnavailableError:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Goal not found") from None
 
 
 @router.get("/{project_id}", responses=NOT_FOUND)
@@ -62,7 +68,11 @@ def get_project(project_id: uuid.UUID, session: SessionDep) -> ProjectRead:
 def update_project(
     project_id: uuid.UUID, changes: ProjectUpdate, session: SessionDep
 ) -> ProjectRead:
-    project = service.update_project(session, _load(session, project_id), changes)
+    project = _load(session, project_id)
+    try:
+        service.update_project(session, project, changes)
+    except GoalUnavailableError:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Goal not found") from None
     return _read_one(session, project)
 
 

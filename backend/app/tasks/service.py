@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
+from app.goals.service import ensure_live_goal
 from app.projects.models import Project
 from app.tasks.models import NextActionOverride, Task, TaskPriority, TaskStatus
 from app.tasks.schemas import TaskCreate, TaskUpdate, TaskView
@@ -93,11 +94,16 @@ def apply_status(task: Task, status: TaskStatus, now: datetime) -> None:
 
 
 def list_tasks(
-    session: Session, view: TaskView, project_id: uuid.UUID | None = None
+    session: Session,
+    view: TaskView,
+    project_id: uuid.UUID | None = None,
+    goal_id: uuid.UUID | None = None,
 ) -> Sequence[Task]:
     query = select(Task)
     if project_id is not None:
         query = query.where(Task.project_id == project_id)
+    if goal_id is not None:
+        query = query.where(Task.goal_id == goal_id)
     if view == "open":
         priority_order = case(
             (Task.priority == TaskPriority.HIGH, 0),
@@ -136,6 +142,7 @@ def _ensure_live_project(session: Session, project_id: uuid.UUID | None) -> None
 
 def create_task(session: Session, data: TaskCreate) -> Task:
     _ensure_live_project(session, data.project_id)
+    ensure_live_goal(session, data.goal_id)
     task = Task(**data.model_dump())
     session.add(task)
     session.commit()
@@ -147,11 +154,14 @@ def update_task(session: Session, task: Task, changes: TaskUpdate, now: datetime
     status = fields.pop("status", None)
     if "project_id" in fields:
         _ensure_live_project(session, fields["project_id"])
+    if "goal_id" in fields:
+        ensure_live_goal(session, fields["goal_id"])
     for name, value in fields.items():
         setattr(task, name, value)
     if status is not None:
         apply_status(task, status, now)
     session.commit()
+    session.refresh(task)  # reload project/goal relationships if a link changed
     return task
 
 

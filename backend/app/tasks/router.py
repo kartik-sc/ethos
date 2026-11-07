@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import Settings, get_settings
 from app.core.db import get_session
+from app.goals.service import GoalUnavailableError
 from app.tasks import service
 from app.tasks.models import Task
 from app.tasks.schemas import (
@@ -38,13 +39,14 @@ def list_tasks(
     session: SessionDep,
     view: Annotated[TaskView, Query()] = "open",
     project_id: Annotated[uuid.UUID | None, Query()] = None,
+    goal_id: Annotated[uuid.UUID | None, Query()] = None,
 ) -> list[TaskRead]:
-    tasks = service.list_tasks(session, view, project_id)
+    tasks = service.list_tasks(session, view, project_id, goal_id)
     return [TaskRead.model_validate(task) for task in tasks]
 
 
 @contextmanager
-def _project_must_be_live(failure_status: int) -> Iterator[None]:
+def _links_must_be_live(failure_status: int) -> Iterator[None]:
     try:
         yield
     except service.ProjectUnavailableError:
@@ -54,11 +56,13 @@ def _project_must_be_live(failure_status: int) -> Iterator[None]:
             else "Project not found"
         )
         raise HTTPException(failure_status, detail) from None
+    except GoalUnavailableError:
+        raise HTTPException(failure_status, "Goal not found") from None
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_task(data: TaskCreate, session: SessionDep) -> TaskRead:
-    with _project_must_be_live(status.HTTP_422_UNPROCESSABLE_CONTENT):
+    with _links_must_be_live(status.HTTP_422_UNPROCESSABLE_CONTENT):
         return TaskRead.model_validate(service.create_task(session, data))
 
 
@@ -85,7 +89,7 @@ def override_next_action(data: NextActionOverrideCreate, session: SessionDep) ->
 @router.patch("/{task_id}", responses=NOT_FOUND)
 def update_task(task_id: uuid.UUID, changes: TaskUpdate, session: SessionDep) -> TaskRead:
     task = _load(session, task_id)
-    with _project_must_be_live(status.HTTP_422_UNPROCESSABLE_CONTENT):
+    with _links_must_be_live(status.HTTP_422_UNPROCESSABLE_CONTENT):
         service.update_task(session, task, changes, datetime.now(UTC))
     return TaskRead.model_validate(task)
 
@@ -101,6 +105,6 @@ def trash_task(task_id: uuid.UUID, session: SessionDep) -> None:
 )
 def restore_task(task_id: uuid.UUID, session: SessionDep) -> TaskRead:
     task = _load(session, task_id, trashed=True)
-    with _project_must_be_live(status.HTTP_409_CONFLICT):
+    with _links_must_be_live(status.HTTP_409_CONFLICT):
         service.restore_task(session, task)
     return TaskRead.model_validate(task)

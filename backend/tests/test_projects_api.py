@@ -107,3 +107,13 @@ def test_partial_update(client: TestClient) -> None:
     assert body["due_date"] == "2026-12-31"
     assert body["description"] == "Personal site"
     assert client.patch(f"{PROJECTS}/{project['id']}", json={"title": None}).status_code == 422
+
+
+def test_moving_a_task_between_projects_returns_the_new_project(client: TestClient) -> None:
+    first = create_project(client, title="First")
+    second = create_project(client, title="Second")
+    task = create_task(client, "Move me", project_id=first["id"])
+
+    response = client.patch(f"{TASKS}/{task['id']}", json={"project_id": second["id"]})
+
+    assert response.json()["project"] == {"id": second["id"], "title": "Second"}

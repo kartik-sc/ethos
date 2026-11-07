@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, model_validator
 
 from app.core.fields import Description, Title
 from app.core.life_areas import LifeArea
+from app.goals.schemas import GoalRef
 
 ProjectView = Literal["active", "trash"]
 
@@ -15,6 +16,7 @@ class ProjectCreate(BaseModel):
     description: Description | None = None
     area: LifeArea | None = None
     due_date: date | None = None
+    goal_id: uuid.UUID | None = None
 
 
 class ProjectUpdate(BaseModel):
@@ -24,6 +26,7 @@ class ProjectUpdate(BaseModel):
     description: Description | None = None
     area: LifeArea | None = None
     due_date: date | None = None
+    goal_id: uuid.UUID | None = None
 
     @model_validator(mode="after")
     def title_not_null(self) -> Self:
@@ -53,6 +56,8 @@ class ProjectRead(BaseModel):
     description: str | None
     area: LifeArea | None
     due_date: date | None
+    goal_id: uuid.UUID | None
+    goal: GoalRef | None
     created_at: datetime
     updated_at: datetime
     deleted_at: datetime | None

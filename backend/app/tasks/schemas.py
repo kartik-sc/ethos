@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.core.fields import Description, Title
 from app.core.life_areas import LifeArea
+from app.goals.schemas import GoalRef
 from app.projects.schemas import ProjectRef
 from app.tasks.models import TaskPriority, TaskStatus
 
@@ -22,6 +23,7 @@ class TaskCreate(BaseModel):
     due_date: date | None = None
     planned_minutes: PlannedMinutes | None = None
     project_id: uuid.UUID | None = None
+    goal_id: uuid.UUID | None = None
 
 
 class TaskUpdate(BaseModel):
@@ -35,6 +37,7 @@ class TaskUpdate(BaseModel):
     due_date: date | None = None
     planned_minutes: PlannedMinutes | None = None
     project_id: uuid.UUID | None = None
+    goal_id: uuid.UUID | None = None
 
     @model_validator(mode="after")
     def required_fields_not_null(self) -> Self:
@@ -57,6 +60,8 @@ class TaskRead(BaseModel):
     planned_minutes: int | None
     project_id: uuid.UUID | None
     project: ProjectRef | None
+    goal_id: uuid.UUID | None
+    goal: GoalRef | None
     created_at: datetime
     updated_at: datetime
     completed_at: datetime | None
