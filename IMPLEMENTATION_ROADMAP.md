@@ -70,7 +70,7 @@ This is the short execution checklist. The full product and technical requiremen
 - [ ] Habit consistency and selected quantitative tracking.
 - [ ] File storage on persistent VPS volume, 25 MB limit and overwrite confirmation.
 - [ ] Project-associated file links and backup inclusion.
-- [ ] Concurrent note edit conflict detection/merge.
+- [x] Concurrent note edit conflict detection/merge.
 - [ ] PWA installability and purpose-built mobile screens.
 
 **Gate:** scheduled work is durable, reports are factual and files/notes are recoverable.

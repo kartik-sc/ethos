@@ -174,6 +174,8 @@ FastAPI serves OpenAPI docs at `/api/docs` outside production.
 | GET | `/api/v1/notes/{id}/versions[/{versionId}]` | Version history and one snapshot |
 | GET | `/api/v1/notes/link-targets?q=` | `[[` autocomplete; `task:`, `project:`, `goal:` prefixes search records |
 | POST / PATCH / DELETE | `/api/v1/note-folders[/{id}]` | Nested folders; only empty folders delete |
+| POST | `/api/v1/notes/import` | Up to 500 Markdown files with relative paths; folders are created or reused |
+| GET | `/api/v1/note-folders/{id}/export` | A folder's notes (with subfolders) as `{path, content}` files |
 
 ### Notes
 
@@ -181,16 +183,25 @@ FastAPI serves OpenAPI docs at `/api/docs` outside production.
 - **Saving:** autosave every 2 minutes while there are changes, `Ctrl+S`, and a last save when
   leaving the note. Network and server failures retry (15 s → 2 min); the draft is never dropped.
   Closing the tab with unsaved changes asks first.
-- **Conflicts:** every save carries the version it started from. If the note changed elsewhere the
-  save is refused, the editor keeps your text and shows the other version. *Keep mine* overwrites
-  and stores the other version in History; *Use the other version* asks before discarding yours.
-  Automatic three-way merging is Phase 4.
+- **Concurrent edits:** every save carries the version it started from and that version's text.
+  If the note changed elsewhere, the server merges three ways (`app/notes/merge.py`): edits to
+  different lines combine, tags merge with removals winning, and the other version is kept in
+  History. Edits to the same lines (or two different renames) are not merged: nothing is saved,
+  your text stays in the editor, and you can *Merge by hand* (both sides between
+  `<<<<<<< yours` / `=======` / `>>>>>>> other version` markers), *Keep mine* (the other version
+  goes to History) or *Use the other version* (asks before discarding yours).
 - **History:** a snapshot per save, with saves under 10 minutes apart sharing one; the latest 50
   are kept. Restoring a version saves it as a new one.
 - **Wiki-links:** `[[Title]]`, `[[Title|shown text]]`, and `[[task:…]]`, `[[project:…]]`,
   `[[goal:…]]`. Links are stored by id, so renaming a target never breaks them; a link written
   before its note exists resolves when that note is created. Titles are unique (ignoring case).
 - **Search** matches note titles, folder names and tags only; note text is never searched.
+- **Import:** pick Markdown files or a whole folder (its structure is recreated). Titles come
+  from file names; a taken title becomes "Title (2)". Non-Markdown files and files over 500,000
+  characters are skipped and listed. Links between imported files resolve in any order.
+- **Export:** one note as `.md` from the editor, or a folder (with subfolders) from the library.
+  In Chrome and Edge the folder is written into a directory you choose; elsewhere each note
+  downloads separately. There is deliberately no whole-library ZIP.
 - Notes in Trash follow the same 30-day purge as everything else.
 
 ### Records over time
