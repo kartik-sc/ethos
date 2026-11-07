@@ -6,6 +6,7 @@ import {
   type LucideIcon,
   NotebookPen,
   Repeat2,
+  Search,
   Settings2,
   SquareTerminal,
   Target,
@@ -21,6 +22,7 @@ export interface NavItem {
 
 export const primaryNav: readonly NavItem[] = [
   { href: "/", label: "Command Centre", icon: SquareTerminal, mobile: true },
+  { href: "/search", label: "Search", icon: Search, mobile: false },
   { href: "/tasks", label: "Tasks", icon: CircleCheck, mobile: true },
   { href: "/projects", label: "Projects", icon: Layers, mobile: false },
   { href: "/goals", label: "Goals", icon: Target, mobile: false },

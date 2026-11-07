@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef } from "react";
 
 import { StatusDot } from "@/components/system/status-dot";
@@ -121,6 +121,7 @@ export function Sidebar() {
   const open = usePreferences((state) => state.sidebarOpen);
   const setOpen = usePreferences((state) => state.setSidebarOpen);
   const toggleDocked = usePreferences((state) => state.toggleSidebarDocked);
+  const router = useRouter();
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const asideRef = useRef<HTMLElement>(null);
   const launcherRef = useRef<HTMLButtonElement>(null);
@@ -134,14 +135,18 @@ export function Sidebar() {
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== "[" || event.ctrlKey || event.metaKey || event.altKey) return;
-      if (isTyping(event.target)) return;
-      event.preventDefault();
-      toggleDocked();
+      if (event.ctrlKey || event.metaKey || event.altKey || isTyping(event.target)) return;
+      if (event.key === "[") {
+        event.preventDefault();
+        toggleDocked();
+      } else if (event.key === "/") {
+        event.preventDefault();
+        router.push("/search");
+      }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [toggleDocked]);
+  }, [toggleDocked, router]);
 
   useEffect(() => {
     if (docked || !open) return;

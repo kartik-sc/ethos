@@ -8,7 +8,8 @@ import { usePreferences } from "@/stores/preferences";
 
 import { Sidebar } from "./sidebar";
 
-vi.mock("next/navigation", () => ({ usePathname: () => "/tasks" }));
+const push = vi.fn();
+vi.mock("next/navigation", () => ({ usePathname: () => "/tasks", useRouter: () => ({ push }) }));
 
 function renderSidebar() {
   vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("offline")));
@@ -64,5 +65,18 @@ describe("Sidebar", () => {
     await userEvent.keyboard("[[");
     expect(usePreferences.getState().sidebarDocked).toBe(true);
     expect(document.getElementById("sidebar")).not.toHaveAttribute("inert");
+  });
+
+  it("opens search with / unless typing", async () => {
+    push.mockClear();
+    renderSidebar();
+
+    await userEvent.click(screen.getByRole("textbox", { name: "Somewhere to type" }));
+    await userEvent.keyboard("/");
+    expect(push).not.toHaveBeenCalled();
+
+    await userEvent.click(document.body);
+    await userEvent.keyboard("/");
+    expect(push).toHaveBeenCalledWith("/search");
   });
 });
