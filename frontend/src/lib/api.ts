@@ -4,6 +4,8 @@ export class ApiError extends Error {
   constructor(
     message: string,
     readonly status: number | null,
+    /** The parsed JSON error body, for responses that carry more than a message. */
+    readonly body: unknown = null,
   ) {
     super(message);
     this.name = "ApiError";
@@ -19,7 +21,7 @@ interface RequestOptions {
 async function request(
   method: string,
   path: string,
-  init: { body?: unknown; signal?: AbortSignal },
+  init: { body?: unknown; signal?: AbortSignal; keepalive?: boolean },
 ): Promise<Response> {
   try {
     return await fetch(`${API_BASE}${path}`, {
@@ -31,6 +33,7 @@ async function request(
       },
       body: init.body === undefined ? undefined : JSON.stringify(init.body),
       credentials: "same-origin",
+      keepalive: init.keepalive,
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") throw error;
@@ -44,7 +47,7 @@ async function failure(response: Response): Promise<ApiError> {
     body && typeof body === "object" && "detail" in body && typeof body.detail === "string"
       ? body.detail
       : `Request failed with ${response.status}`;
-  return new ApiError(detail, response.status);
+  return new ApiError(detail, response.status, body);
 }
 
 export async function apiGet<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -58,8 +61,9 @@ export async function apiSend<T = void>(
   method: "POST" | "PUT" | "PATCH" | "DELETE",
   path: string,
   body?: unknown,
+  options: { keepalive?: boolean } = {},
 ): Promise<T> {
-  const response = await request(method, path, { body });
+  const response = await request(method, path, { body, keepalive: options.keepalive });
   if (!response.ok) throw await failure(response);
   return (response.status === 204 ? undefined : await response.json()) as T;
 }

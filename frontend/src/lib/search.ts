@@ -5,6 +5,7 @@ export const SEARCH_KINDS: readonly { value: SearchKind; label: string }[] = [
   { value: "project", label: "Projects" },
   { value: "goal", label: "Goals" },
   { value: "habit", label: "Habits" },
+  { value: "note", label: "Notes" },
   { value: "inbox", label: "Inbox" },
 ];
 
@@ -24,6 +25,8 @@ export function hitHref(hit: Pick<SearchHit, "kind" | "id">): string {
       return "/habits";
     case "inbox":
       return "/inbox";
+    case "note":
+      return `/notes/${hit.id}`;
     default:
       return `/${hit.kind}s/${hit.id}`;
   }

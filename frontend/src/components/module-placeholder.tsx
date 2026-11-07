@@ -4,10 +4,6 @@ import { primaryNav } from "@/lib/navigation";
 
 // Stand-in for modules not built yet. Each page swaps this out as its slice lands.
 const modules = {
-  notes: {
-    description: "Raw Markdown notes with folders, tags, wiki-links and backlinks.",
-    empty: "The Notes library arrives with the Phase 1 workspace.",
-  },
   analytics: {
     description: "Weekly and monthly numbers, comparisons and factual observations.",
     empty: "Analytics arrive once tasks and habits are recording history.",

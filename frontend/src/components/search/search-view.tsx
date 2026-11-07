@@ -136,7 +136,7 @@ export function SearchView({ initialQuery }: { initialQuery: string }) {
           maxLength={200}
           value={input}
           onChange={(event) => setInput(event.target.value)}
-          placeholder="Search tasks, projects, goals, habits and captures"
+          placeholder="Search tasks, projects, goals, habits, notes and captures"
           className="h-11 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-faint"
         />
       </div>
@@ -182,8 +182,7 @@ export function SearchView({ initialQuery }: { initialQuery: string }) {
 
       {!query.trim() ? (
         <p className="px-1 text-sm text-muted-foreground">
-          Type to search. Notes will be searchable by title, folder and tags once they arrive; note
-          text is never indexed.
+          Type to search. Notes match on title, folder and tags; note text is never searched.
         </p>
       ) : results.isPending ? (
         <div className="space-y-3" aria-busy="true">

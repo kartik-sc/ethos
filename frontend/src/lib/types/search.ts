@@ -1,7 +1,7 @@
 // Mirrors backend/app/search/schemas.py.
 import type { LifeArea } from "./tasks";
 
-export type SearchKind = "task" | "project" | "goal" | "habit" | "inbox";
+export type SearchKind = "task" | "project" | "goal" | "habit" | "note" | "inbox";
 export type StatusFilter = "open" | "closed";
 
 export interface SearchHit {
