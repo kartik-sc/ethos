@@ -13,7 +13,7 @@ import { useNow } from "@/hooks/use-now";
 import { useToday } from "@/hooks/use-today";
 import { goalRatio, goalSummary } from "@/lib/goals";
 import { areaLabel, describeDue } from "@/lib/tasks";
-import { formatRelativeSeconds } from "@/lib/time";
+import { trashLabel } from "@/lib/trash";
 import type { Goal, GoalView } from "@/lib/types/goals";
 import { cn } from "@/lib/utils";
 
@@ -72,8 +72,7 @@ function TrashRow({ goal }: { goal: Goal }) {
           <p className="truncate text-sm text-muted-foreground">{goal.title}</p>
           {goal.deleted_at && now && (
             <p className="font-mono text-[0.6875rem] text-faint">
-              deleted {formatRelativeSeconds(new Date(goal.deleted_at), now)} · links come back with
-              it
+              {trashLabel(goal.deleted_at, now)} · links come back with it
             </p>
           )}
         </div>

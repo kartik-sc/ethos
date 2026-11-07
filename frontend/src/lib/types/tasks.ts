@@ -5,7 +5,7 @@ import type { ProjectRef } from "./projects";
 export type TaskStatus = "open" | "done" | "cancelled";
 export type TaskPriority = "low" | "normal" | "high";
 export type LifeArea = "academics" | "career" | "personal" | "health" | "social" | "learning";
-export type TaskView = "open" | "done" | "trash";
+export type TaskView = "open" | "done" | "archived" | "trash";
 
 export interface Task {
   id: string;

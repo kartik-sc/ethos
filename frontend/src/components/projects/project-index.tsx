@@ -14,7 +14,7 @@ import { useCreateProject, useProjects, useRestoreProject } from "@/hooks/use-pr
 import { useToday } from "@/hooks/use-today";
 import { taskSummary } from "@/lib/projects";
 import { areaLabel, describeDue } from "@/lib/tasks";
-import { formatRelativeSeconds } from "@/lib/time";
+import { trashLabel } from "@/lib/trash";
 import type { Project, ProjectView } from "@/lib/types/projects";
 import { cn } from "@/lib/utils";
 
@@ -93,8 +93,7 @@ function TrashRow({ project }: { project: Project }) {
           <p className="truncate text-sm text-muted-foreground">{project.title}</p>
           {project.deleted_at && now && (
             <p className="font-mono text-[0.6875rem] text-faint">
-              deleted {formatRelativeSeconds(new Date(project.deleted_at), now)} · its tasks come
-              back with it
+              {trashLabel(project.deleted_at, now)} · its tasks come back with it
             </p>
           )}
         </div>

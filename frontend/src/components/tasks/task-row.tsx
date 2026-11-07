@@ -7,6 +7,7 @@ import { useNow } from "@/hooks/use-now";
 import { useRestoreTask, useUpdateTask } from "@/hooks/use-tasks";
 import { areaLabel, type DueTone, describeDue, formatMinutes } from "@/lib/tasks";
 import { formatRelativeSeconds } from "@/lib/time";
+import { trashLabel } from "@/lib/trash";
 import type { Task, TaskView } from "@/lib/types/tasks";
 import { cn } from "@/lib/utils";
 
@@ -49,8 +50,9 @@ function Meta({
       {view === "open" && due && <span className={dueTone[due.tone]}>{due.text}</span>}
       {view !== "open" && closedAt && now && (
         <span>
-          {view === "trash" ? "deleted" : task.status}{" "}
-          {formatRelativeSeconds(new Date(closedAt), now)}
+          {view === "trash"
+            ? trashLabel(closedAt, now)
+            : `${task.status} ${formatRelativeSeconds(new Date(closedAt), now)}`}
         </span>
       )}
     </span>

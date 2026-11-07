@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import { PageHeader } from "@/components/page-header";
+import { ArchiveSetting } from "@/components/settings/archive-setting";
 import { ThemeSetting } from "@/components/settings/theme-setting";
 import { DEFAULT_TIMEZONE } from "@/lib/time";
 
@@ -39,6 +40,26 @@ export default function SettingsPage() {
         <div className="divide-y divide-border">
           <SettingRow label="Theme" description="Ethos never switches theme automatically.">
             <ThemeSetting />
+          </SettingRow>
+        </div>
+      </section>
+
+      <section aria-labelledby="records-heading">
+        <h2 id="records-heading" className="micro-label">
+          Records
+        </h2>
+        <div className="divide-y divide-border">
+          <SettingRow
+            label="Archive finished tasks after"
+            description="They leave the Done list but stay searchable. Archiving never deletes."
+          >
+            <ArchiveSetting />
+          </SettingRow>
+          <SettingRow
+            label="Trash"
+            description="Deleted records can be restored for 30 days, then they are removed for good."
+          >
+            <span className="font-mono text-xs text-muted-foreground">30 days</span>
           </SettingRow>
         </div>
       </section>

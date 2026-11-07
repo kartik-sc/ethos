@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCheck, ListTodo, Trash2 } from "lucide-react";
+import { Archive, CheckCheck, ListTodo, Trash2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 
@@ -21,6 +21,7 @@ const UNDO_MS = 6000;
 const views: { value: TaskView; label: string }[] = [
   { value: "open", label: "Open" },
   { value: "done", label: "Done" },
+  { value: "archived", label: "Archived" },
   { value: "trash", label: "Trash" },
 ];
 
@@ -34,6 +35,11 @@ const empty: Record<TaskView, { icon: typeof ListTodo; title: string; body: stri
     icon: CheckCheck,
     title: "Nothing finished yet",
     body: "Completed and cancelled tasks appear here, most recent first.",
+  },
+  archived: {
+    icon: Archive,
+    title: "Nothing archived",
+    body: "Finished tasks move here once they are older than the archive period in Settings.",
   },
   trash: {
     icon: Trash2,

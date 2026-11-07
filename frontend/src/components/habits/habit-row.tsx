@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useNow } from "@/hooks/use-now";
 import {
   useHabitHistory,
   useRestoreHabit,
@@ -13,6 +14,7 @@ import {
   useUpdateHabit,
 } from "@/hooks/use-habits";
 import { describeSchedule, describeTarget } from "@/lib/habits";
+import { trashLabel } from "@/lib/trash";
 import type { Habit } from "@/lib/types/habits";
 import { cn } from "@/lib/utils";
 
@@ -162,9 +164,17 @@ export function HabitRow({ habit }: { habit: Habit }) {
 
 export function TrashedHabitRow({ habit }: { habit: Habit }) {
   const restore = useRestoreHabit();
+  const now = useNow();
   return (
     <li className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5 last:border-b-0">
-      <span className="min-w-0 truncate text-sm text-muted-foreground">{habit.title}</span>
+      <div className="min-w-0">
+        <p className="truncate text-sm text-muted-foreground">{habit.title}</p>
+        {habit.deleted_at && now && (
+          <p className="font-mono text-[0.6875rem] text-faint">
+            {trashLabel(habit.deleted_at, now)} · history comes back with it
+          </p>
+        )}
+      </div>
       <button
         type="button"
         onClick={() => restore.mutate(habit.id)}
