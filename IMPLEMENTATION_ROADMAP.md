@@ -48,10 +48,10 @@ This is the short execution checklist. The full product and technical requiremen
 
 ## Phase 3 — Command and capture channels
 
-- [ ] `Ctrl+K` command palette with slash commands.
-- [ ] Natural-language capture behind a provider adapter.
-- [ ] Immediate execution for clear commands; clarification only when essential.
-- [ ] Duplicate detection and confirmation.
+- [x] `Ctrl+K` command palette with slash commands.
+- [ ] Natural-language capture behind a provider adapter. *(adapter seam in place; waiting on a provider choice)*
+- [x] Immediate execution for clear commands; clarification only when essential.
+- [x] Duplicate detection and confirmation.
 - [ ] Brain-dump classification without task-subtask decomposition.
 - [x] 24-hour and 48-hour Inbox ageing indicators.
 - [ ] iPhone Shortcuts capture endpoint.

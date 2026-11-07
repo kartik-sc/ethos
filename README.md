@@ -177,6 +177,32 @@ FastAPI serves OpenAPI docs at `/api/docs` outside production.
 | POST | `/api/v1/notes/import` | Up to 500 Markdown files with relative paths; folders are created or reused |
 | GET | `/api/v1/note-folders/{id}/export` | A folder's notes (with subfolders) as `{path, content}` files |
 
+### Command palette
+
+`Ctrl+K` anywhere (or the terminal button on the phone's top bar). Plain text + Enter goes to the
+Inbox; `/` lists commands. Commands are parsed deterministically in the backend
+(`app/commands/parser.py`); nothing is guessed, and a missing essential detail gets one question.
+
+| Command | Example |
+|---|---|
+| `/task` (`/t`) | `/task Finish DBMS report by fri !high #academics @portfolio 45m` |
+| `/deadline` (`/d`) | `/deadline Scholarship form 20 nov` (a date is required) |
+| `/capture` (`/c`) | `/capture call the bank about the card` |
+| `/habit` (`/h`) | `/habit leetcode 90` · `/habit sleep 23:30-07:00` · `/habit gym` |
+| `/note` (`/n`) | `/note Graph theory` (opens it) |
+| `/project` (`/p`) · `/goal` (`/g`) | `/project Portfolio site by 2026-12-31 #career` |
+| `/search` (`/s`) | `/search dbms` |
+
+- Dates: `today`, `tomorrow`/`tmrw`, weekday names (next occurrence, today included),
+  `in 3 days`, `in 2 weeks`, `2026-12-31`, `20/11` (day first), `20 nov`, `nov 20 2027`. After
+  `by`, `due`, `on` or `before`, or at the end of the title.
+- `!high`/`!low`, `#area` (a life area), `@project` (matched by title), durations `45m`, `2h`, `1h30m`.
+- `POST /api/v1/commands/preview` shows what Enter will do without writing;
+  `POST /api/v1/commands/run` executes it. Similar existing tasks, projects or goals return `409`
+  with the matches; resending with `confirm_duplicate` creates it anyway. Nothing is ever merged.
+- Natural-language commands plug in through `app/commands/interpreter.py` once a provider is
+  chosen; until then plain text is an Inbox capture.
+
 ### Notes
 
 - **Raw Markdown**, edited as source. No preview, templates, attachments or AI, per the spec.
