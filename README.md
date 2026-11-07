@@ -127,6 +127,24 @@ FastAPI serves OpenAPI docs at `/api/docs` outside production.
 |---|---|---|
 | GET | `/api/v1/health/live` | Process liveness, no dependencies. Used by the container healthcheck |
 | GET | `/api/v1/health` | Database and worker status. `200` when ok/degraded, `503` when the database is down |
+| GET | `/api/v1/tasks?view=open\|done\|trash` | Open tasks by deadline; done/cancelled newest first (last 100); Trash |
+| POST | `/api/v1/tasks` | Create a task |
+| PATCH | `/api/v1/tasks/{id}` | Partial update; `status` stamps `completed_at` / `cancelled_at` |
+| DELETE | `/api/v1/tasks/{id}` | Move to Trash (soft delete) |
+| POST | `/api/v1/tasks/{id}/restore` | Restore from Trash |
+| GET | `/api/v1/tasks/next-action` | The one highlighted task and why |
+| POST | `/api/v1/tasks/next-action/override` | Record that the owner picked a different task; honoured for the rest of the day |
+
+### Next Action rule
+
+`app/tasks/service.py::rank_key` orders open tasks: overdue → due today or tomorrow → high
+priority → due within 7 days → everything else; ties go to higher priority, earlier deadline,
+then the oldest task. "Today" is the owner's timezone (`DEFAULT_TIMEZONE`). An override applies
+until local midnight or until the chosen task is closed, and every override is stored in
+`next_action_overrides` for later pattern reports.
+
+> Not yet: the API has no authentication (Google sign-in is the next owner-dependent slice), and
+> Trash is not purged after 30 days yet. Neither matters while Ethos only runs locally.
 
 ## Deployment
 

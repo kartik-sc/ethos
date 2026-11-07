@@ -4,10 +4,6 @@ import { primaryNav } from "@/lib/navigation";
 
 // Stand-in for modules not built yet. Each page swaps this out as its slice lands.
 const modules = {
-  tasks: {
-    description: "Standalone work items with deadlines, durations and completion history.",
-    empty: "Task capture and management arrive with the Phase 1 workspace.",
-  },
   projects: {
     description: "Simple pages that group related tasks, deadlines, notes and files.",
     empty: "Projects arrive with the Phase 1 workspace.",

@@ -5,7 +5,7 @@ export type DayPart = "morning" | "afternoon" | "evening";
 
 /**
  * Drives the greeting now and the dashboard's emphasis later
- * (morning → agenda, afternoon → remaining commitments, evening → outstanding work).
+ * (morning â†’ agenda, afternoon â†’ remaining commitments, evening â†’ outstanding work).
  */
 export function getDayPart(hour: number): DayPart {
   if (hour >= 5 && hour < 12) return "morning";
@@ -43,5 +43,31 @@ export function formatRelativeSeconds(from: Date, to: Date): string {
   if (seconds < 60) return `${seconds}s ago`;
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
-  return `${Math.floor(minutes / 60)}h ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
+
+/** Calendar date (YYYY-MM-DD) for `date` as seen in `timeZone`. */
+export function isoDateIn(date: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone,
+  }).format(date);
+}
+
+/** Whole days from one ISO date to another; negative when `to` is earlier. */
+export function daysBetween(from: string, to: string): number {
+  return Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000);
+}
+
+export function formatShortDate(isoDate: string): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  }).format(new Date(`${isoDate}T00:00:00Z`));
 }

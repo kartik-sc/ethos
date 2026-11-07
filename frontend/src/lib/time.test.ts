@@ -26,10 +26,11 @@ describe("hourIn", () => {
 
 describe("formatRelativeSeconds", () => {
   const base = new Date("2026-11-07T10:00:00Z");
-  it("formats seconds, minutes and hours", () => {
+  it("formats seconds, minutes, hours and days", () => {
     expect(formatRelativeSeconds(base, new Date("2026-11-07T10:00:12Z"))).toBe("12s ago");
     expect(formatRelativeSeconds(base, new Date("2026-11-07T10:05:00Z"))).toBe("5m ago");
     expect(formatRelativeSeconds(base, new Date("2026-11-07T12:00:00Z"))).toBe("2h ago");
+    expect(formatRelativeSeconds(base, new Date("2026-11-10T09:00:00Z"))).toBe("2d ago");
   });
 
   it("never reports negative ages from clock skew", () => {
