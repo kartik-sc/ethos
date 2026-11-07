@@ -32,6 +32,8 @@ export interface Note extends NoteSummary {
   created_at: string;
   links: NoteLink[];
   backlinks: { id: string; title: string }[];
+  /** Set on a save response that had to be merged with a version saved elsewhere. */
+  merged?: boolean;
 }
 
 export interface NoteTree {
@@ -46,6 +48,9 @@ export interface NoteSave {
   folder_id: string | null;
   tags: string[];
   base_version: number;
+  preserve_current: boolean;
+  /** The note as the editor loaded it, so a stale save can be merged three ways. */
+  base: { title: string; content: string; folder_id: string | null; tags: string[] } | null;
 }
 
 export interface VersionSummary {

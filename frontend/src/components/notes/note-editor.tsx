@@ -9,11 +9,11 @@ import { EmptyState } from "@/components/empty-state";
 import { fieldClass } from "@/components/form-controls";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useNoteDraft } from "@/hooks/use-note-draft";
+import { type Conflict, useNoteDraft } from "@/hooks/use-note-draft";
 import { useNow } from "@/hooks/use-now";
 import { useNote, useNoteTree, useTrashNote } from "@/hooks/use-notes";
 import { ApiError } from "@/lib/api";
-import type { SaveStatus } from "@/lib/note-draft";
+import { MARKER, type SaveStatus } from "@/lib/note-draft";
 import { folderPath, markdownFilename, parseTags } from "@/lib/notes";
 import { formatRelativeSeconds } from "@/lib/time";
 import type { Note } from "@/lib/types/notes";
@@ -69,14 +69,17 @@ function download(title: string, content: string) {
 }
 
 function ConflictPanel({
-  theirs,
+  conflict,
   onKeepMine,
   onTakeTheirs,
+  onMergeByHand,
 }: {
-  theirs: Note;
+  conflict: Conflict;
   onKeepMine: () => void;
   onTakeTheirs: () => void;
+  onMergeByHand: () => void;
 }) {
+  const theirs = conflict.theirs;
   const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   return (
@@ -86,11 +89,11 @@ function ConflictPanel({
     >
       <div className="space-y-1">
         <p className="text-sm font-medium">
-          This note was saved somewhere else while you were editing.
+          This note was saved somewhere else, and both of you changed the same part.
         </p>
         <p className="text-xs text-muted-foreground">
-          Your text is still here and has not been saved. The other version is shown below so you
-          can compare. Keeping yours stores the other version in History, so neither is lost.
+          Edits to different parts merge on their own; these overlap, so nothing was saved. Your
+          text is still here. Keeping yours stores the other version in History, so neither is lost.
         </p>
       </div>
       <details className="rounded-lg border border-border bg-background/60">
@@ -102,7 +105,16 @@ function ConflictPanel({
         </pre>
       </details>
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" onClick={onKeepMine}>
+        {conflict.markers !== null && (
+          <Button size="sm" onClick={onMergeByHand}>
+            Merge by hand
+          </Button>
+        )}
+        <Button
+          size="sm"
+          variant={conflict.markers !== null ? "outline" : "default"}
+          onClick={onKeepMine}
+        >
           Keep mine
         </Button>
         {confirmDiscard ? (
@@ -196,10 +208,27 @@ function EditorBody({ initial }: { initial: Note }) {
 
         {editor.conflict && (
           <ConflictPanel
-            theirs={editor.conflict}
+            conflict={editor.conflict}
             onKeepMine={editor.keepMine}
             onTakeTheirs={editor.takeTheirs}
+            onMergeByHand={editor.mergeByHand}
           />
+        )}
+        {!editor.conflict && draft.content.includes(MARKER) && (
+          <p
+            role="note"
+            className="rounded-lg border border-warning/40 bg-warning/5 px-3 py-2 text-xs text-muted-foreground"
+          >
+            Each overlap is shown as <code className="font-mono">{MARKER}</code> (your text),{" "}
+            <code className="font-mono">=======</code>, then the other version, ending at{" "}
+            <code className="font-mono">&gt;&gt;&gt;&gt;&gt;&gt;&gt; other version</code>. Keep what
+            you want, delete the markers, then save.
+          </p>
+        )}
+        {editor.mergedAt && !editor.conflict && status !== "dirty" && (
+          <p role="status" className="font-mono text-[0.6875rem] text-primary">
+            Merged with changes made elsewhere · the previous version is in History
+          </p>
         )}
 
         <label htmlFor="note-title" className="sr-only">

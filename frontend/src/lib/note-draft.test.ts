@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  conflictMarkers,
   conflictingNote,
   deriveStatus,
   draftOf,
@@ -32,14 +33,15 @@ describe("drafts", () => {
     expect(sameDraft(draft, { ...draft, tags: ["cs", "algo"] })).toBe(false);
   });
 
-  it("builds a save from the version the editor started at", () => {
-    expect(toSave({ ...draftOf(note), title: " New " }, 3)).toEqual({
+  it("builds a save from the version the editor started at, with its base", () => {
+    expect(toSave({ ...draftOf(note), title: " New " }, 3, { base: draftOf(note) })).toEqual({
       title: "New",
       content: "BFS",
       folder_id: null,
       tags: ["cs"],
       base_version: 3,
       preserve_current: false,
+      base: { title: "Graph theory", content: "BFS", folder_id: null, tags: ["cs"] },
     });
   });
 });
@@ -59,8 +61,12 @@ describe("status", () => {
 });
 
 describe("errors", () => {
-  it("reads the other version from a conflict body", () => {
+  it("reads the other version and the marked-up merge from a conflict body", () => {
     expect(conflictingNote({ detail: "x", current: note })).toEqual(note);
+    expect(conflictMarkers({ current: note, merged_with_markers: "<<<<<<< yours" })).toBe(
+      "<<<<<<< yours",
+    );
+    expect(conflictMarkers({ current: note, merged_with_markers: null })).toBeNull();
     expect(conflictingNote({ detail: "Another note already has this title" })).toBeNull();
   });
 

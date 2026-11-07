@@ -5,6 +5,7 @@ import { ApiError, apiGet, apiSend } from "@/lib/api";
 import {
   AUTOSAVE_MS,
   conflictingNote,
+  conflictMarkers,
   type Draft,
   deriveStatus,
   draftOf,
@@ -25,20 +26,37 @@ interface SaveOptions {
   overwrite?: Note;
 }
 
+/** What the draft was last in sync with: the common ancestor for the next save. */
+interface Base {
+  draft: Draft;
+  version: number;
+}
+
+export interface Conflict {
+  theirs: Note;
+  /** Both sides of each overlapping edit between markers, when the text itself conflicted. */
+  markers: string | null;
+}
+
 /**
  * Owns one open note: the draft, its save status and every way it gets written —
- * explicit save, the two-minute autosave, retries, and a last save on the way out.
+ * explicit save, the two-minute autosave, retries, merges, and a last save on the way out.
  */
 export function useNoteDraft(initial: Note) {
   const queryClient = useQueryClient();
   const [saved, setSaved] = useState(initial);
+  const [base, setBase] = useState<Base>(() => ({
+    draft: draftOf(initial),
+    version: initial.version,
+  }));
   const [draft, setDraft] = useState(() => draftOf(initial));
   const [saving, setSaving] = useState(false);
-  const [conflict, setConflict] = useState<Note | null>(null);
+  const [conflict, setConflict] = useState<Conflict | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const [mergedAt, setMergedAt] = useState<Date | null>(null);
 
-  const dirty = !sameDraft(draft, draftOf(saved));
+  const dirty = !sameDraft(draft, base.draft);
   const status: SaveStatus = deriveStatus({
     conflict: conflict !== null,
     saving,
@@ -47,9 +65,9 @@ export function useNoteDraft(initial: Note) {
   });
 
   // Timers and the unmount save read the latest state through this ref.
-  const latest = useRef({ draft, saved, dirty, saving, conflict });
+  const latest = useRef({ draft, base, saved, dirty, saving, conflict });
   useEffect(() => {
-    latest.current = { draft, saved, dirty, saving, conflict };
+    latest.current = { draft, base, saved, dirty, saving, conflict };
   });
   const retry = useRef<{ attempt: number; timer?: ReturnType<typeof setTimeout> }>({ attempt: 0 });
   // Retries call the latest save through a ref instead of the callback capturing itself.
@@ -67,25 +85,35 @@ export function useNoteDraft(initial: Note) {
       clearTimeout(retry.current.timer);
       setSaving(true);
       try {
-        const base = options.overwrite?.version ?? current.saved.version;
-        const result = await apiSend<Note>(
-          "PUT",
-          `/notes/${current.saved.id}`,
-          toSave(toWrite, base, options.overwrite !== undefined),
-        );
+        const body = options.overwrite
+          ? toSave(toWrite, options.overwrite.version, { preserveCurrent: true })
+          : toSave(toWrite, current.base.version, { base: current.base.draft });
+        const result = await apiSend<Note>("PUT", `/notes/${current.saved.id}`, body);
+        const typedSince = !sameDraft(latest.current.draft, toWrite);
+
         retry.current.attempt = 0;
         setSaved(result);
         setConflict(null);
         setError(null);
         setSavedAt(new Date());
-        queryClient.setQueryData(noteKeys.note(result.id), result);
+        if (result.merged && typedSince) {
+          // The server merged in changes from elsewhere, but typing continued meanwhile. Keep
+          // what was sent as the base, so the next save merges the new typing on top of the
+          // merged note instead of quietly undoing the other side's changes.
+          setBase({ draft: toWrite, version: result.version - 1 });
+        } else {
+          setBase({ draft: draftOf(result), version: result.version });
+          if (result.merged) setDraft(draftOf(result));
+        }
+        if (result.merged) setMergedAt(new Date());
+        queryClient.setQueryData(noteKeys.note(result.id), { ...result, merged: false });
         void queryClient.invalidateQueries({ queryKey: noteKeys.tree });
         void queryClient.invalidateQueries({ queryKey: noteKeys.versions(result.id) });
       } catch (caught) {
         const apiError = caught instanceof ApiError ? caught : new ApiError("Save failed", null);
-        const other = apiError.status === 409 ? conflictingNote(apiError.body) : null;
-        if (other) {
-          setConflict(other);
+        const theirs = apiError.status === 409 ? conflictingNote(apiError.body) : null;
+        if (theirs) {
+          setConflict({ theirs, markers: conflictMarkers(apiError.body) });
         } else {
           setError(apiError.message);
           if (isTransient(apiError.status)) {
@@ -130,14 +158,8 @@ export function useNoteDraft(initial: Note) {
       const current = latest.current;
       clearTimeout(retry.current.timer);
       if (current.dirty && !current.conflict && current.draft.title.trim()) {
-        void apiSend(
-          "PUT",
-          `/notes/${current.saved.id}`,
-          toSave(current.draft, current.saved.version),
-          {
-            keepalive: true,
-          },
-        )
+        const body = toSave(current.draft, current.base.version, { base: current.base.draft });
+        void apiSend("PUT", `/notes/${current.saved.id}`, body, { keepalive: true })
           .then(() => queryClient.invalidateQueries({ queryKey: noteKeys.all }))
           .catch(() => undefined);
       }
@@ -146,13 +168,27 @@ export function useNoteDraft(initial: Note) {
   );
 
   const keepMine = useCallback(() => {
-    if (conflict) void save({ overwrite: conflict });
+    if (conflict) void save({ overwrite: conflict.theirs });
   }, [conflict, save]);
 
   const takeTheirs = useCallback(() => {
     if (!conflict) return;
-    setSaved(conflict);
-    setDraft(draftOf(conflict));
+    setSaved(conflict.theirs);
+    setBase({ draft: draftOf(conflict.theirs), version: conflict.theirs.version });
+    setDraft(draftOf(conflict.theirs));
+    setConflict(null);
+    setError(null);
+  }, [conflict]);
+
+  /**
+   * Loads both versions of each overlapping edit into the editor between markers. Saving after
+   * editing them builds on the other version, so nothing it changed is lost.
+   */
+  const mergeByHand = useCallback(() => {
+    if (!conflict?.markers) return;
+    setSaved(conflict.theirs);
+    setBase({ draft: draftOf(conflict.theirs), version: conflict.theirs.version });
+    setDraft((current) => ({ ...current, content: conflict.markers ?? current.content }));
     setConflict(null);
     setError(null);
   }, [conflict]);
@@ -172,9 +208,11 @@ export function useNoteDraft(initial: Note) {
     error,
     conflict,
     savedAt,
+    mergedAt,
     save,
     keepMine,
     takeTheirs,
+    mergeByHand,
     refreshLinks,
   };
 }
