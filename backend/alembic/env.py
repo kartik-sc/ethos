@@ -7,6 +7,7 @@ import app.habits.models
 import app.inbox.models
 import app.preferences.models
 import app.projects.models
+import app.quotes.models
 import app.system.models
 import app.tasks.models  # noqa: F401
 from app.core.config import get_settings
