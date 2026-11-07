@@ -315,6 +315,16 @@ def _snapshot(session: Session, note: Note, now: datetime, *, separate: bool = F
     session.execute(delete(NoteVersion).where(NoteVersion.id.in_(stale)))
 
 
+def _latest_snapshot_matches(session: Session, note: Note) -> bool:
+    latest = session.scalars(
+        select(NoteVersion)
+        .where(NoteVersion.note_id == note.id)
+        .order_by(NoteVersion.saved_at.desc())
+        .limit(1)
+    ).first()
+    return latest is not None and (latest.title, latest.content) == (note.title, note.content)
+
+
 def create_note(session: Session, data: NoteCreate, now: datetime) -> Note:
     _ensure_title_free(session, data.title, None)
     _folder(session, data.folder_id)
@@ -341,7 +351,7 @@ def save_note(session: Session, note: Note, data: NoteSave, now: datetime) -> No
     _ensure_title_free(session, data.title, note.id)
     _folder(session, data.folder_id)
     renamed = data.title != note.title
-    if data.preserve_current:
+    if data.preserve_current and not _latest_snapshot_matches(session, note):
         replaced_at = now - timedelta(microseconds=1)
         session.add(
             NoteVersion(

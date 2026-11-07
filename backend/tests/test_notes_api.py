@@ -164,4 +164,4 @@ def test_keeping_mine_after_a_conflict_preserves_theirs_in_history(client: TestC
         client.get(f"{NOTES}/{mine['id']}/versions/{version['id']}").json()["content"]
         for version in client.get(f"{NOTES}/{mine['id']}/versions").json()
     ]
-    assert contents[:2] == ["my edit", "their edit"]
+    assert contents == ["my edit", "their edit"]
