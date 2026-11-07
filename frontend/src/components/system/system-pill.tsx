@@ -4,16 +4,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useHealth } from "@/hooks/use-health";
 import { summariseSystem } from "@/lib/system-status";
 import { cn } from "@/lib/utils";
-import { usePreferences } from "@/stores/preferences";
 
 import { StatusDot } from "./status-dot";
 
 export function SystemPill({ compact = false }: { compact?: boolean }) {
   const summary = summariseSystem(useHealth());
-  const collapsed = usePreferences((state) => state.sidebarCollapsed);
 
   return (
-    <Tooltip disabled={!compact && !collapsed}>
+    <Tooltip disabled={!compact}>
       <TooltipTrigger
         render={<div role="status" />}
         className={cn(
@@ -22,14 +20,7 @@ export function SystemPill({ compact = false }: { compact?: boolean }) {
         )}
       >
         <StatusDot tone={summary.tone} />
-        <span
-          className={cn(
-            "truncate transition-opacity duration-200 collapsed:opacity-0",
-            compact && "sr-only",
-          )}
-        >
-          {summary.label}
-        </span>
+        <span className={cn("truncate", compact && "sr-only")}>{summary.label}</span>
       </TooltipTrigger>
       <TooltipContent side={compact ? "bottom" : "right"}>{summary.label}</TooltipContent>
     </Tooltip>

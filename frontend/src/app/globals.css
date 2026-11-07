@@ -4,8 +4,8 @@
 
 /* Theme and sidebar state live as attributes on <html>, set before first paint. */
 @custom-variant dark (&:is(.dark *));
-@custom-variant collapsed (&:where([data-sidebar="collapsed"] *));
-@custom-variant expanded (&:where(:root:not([data-sidebar="collapsed"]) *));
+@custom-variant docked (&:where([data-sidebar="docked"] *));
+@custom-variant floating (&:where(:root:not([data-sidebar="docked"]) *));
 
 @theme inline {
   --font-sans: var(--font-instrument-sans);

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 import {
-  applySidebarCollapsed,
+  applySidebarDocked,
   applyTheme,
   readDocumentPreferences,
   type Theme,
@@ -9,24 +9,29 @@ import {
 
 interface PreferencesState {
   theme: Theme;
-  sidebarCollapsed: boolean;
+  sidebarDocked: boolean;
+  /** Floating sidebar currently slid in. Never persisted. */
+  sidebarOpen: boolean;
   syncFromDocument: () => void;
   setTheme: (theme: Theme) => void;
-  toggleSidebar: () => void;
+  toggleSidebarDocked: () => void;
+  setSidebarOpen: (open: boolean) => void;
 }
 
 // Defaults match the server render; syncFromDocument picks up the boot script's result.
 export const usePreferences = create<PreferencesState>()((set, get) => ({
   theme: "dark",
-  sidebarCollapsed: false,
+  sidebarDocked: false,
+  sidebarOpen: false,
   syncFromDocument: () => set(readDocumentPreferences()),
   setTheme: (theme) => {
     applyTheme(theme);
     set({ theme });
   },
-  toggleSidebar: () => {
-    const sidebarCollapsed = !get().sidebarCollapsed;
-    applySidebarCollapsed(sidebarCollapsed);
-    set({ sidebarCollapsed });
+  toggleSidebarDocked: () => {
+    const sidebarDocked = !get().sidebarDocked;
+    applySidebarDocked(sidebarDocked);
+    set({ sidebarDocked, sidebarOpen: false });
   },
+  setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
 }));

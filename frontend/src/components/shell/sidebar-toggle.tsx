@@ -1,27 +1,28 @@
 "use client";
 
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Pin, PinOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { usePreferences } from "@/stores/preferences";
 
 export function SidebarToggle() {
-  const collapsed = usePreferences((state) => state.sidebarCollapsed);
-  const toggle = usePreferences((state) => state.toggleSidebar);
+  const docked = usePreferences((state) => state.sidebarDocked);
+  const toggle = usePreferences((state) => state.toggleSidebarDocked);
 
   return (
     <Button
       variant="ghost"
       size="icon-sm"
       onClick={toggle}
-      aria-controls="sidebar"
-      aria-expanded={!collapsed}
-      aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+      aria-pressed={docked}
+      aria-keyshortcuts="["
+      aria-label={docked ? "Undock sidebar" : "Dock sidebar"}
+      title={docked ? "Undock sidebar  [" : "Dock sidebar  ["}
       className="text-sidebar-foreground hover:text-foreground"
     >
       {/* Icons follow the <html> attribute so they are correct before hydration. */}
-      <PanelLeftClose className="collapsed:hidden" />
-      <PanelLeftOpen className="expanded:hidden" />
+      <PinOff className="floating:hidden" />
+      <Pin className="docked:hidden" />
     </Button>
   );
 }
