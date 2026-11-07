@@ -93,6 +93,10 @@ This is the short execution checklist. The full product and technical requiremen
 
 ## Procurement / owner actions (only when implementation reaches them)
 
+The first prototype runs entirely on the owner's machine (`docker compose up`). Nothing before
+VPS procurement may depend on a server, domain or public URL; integrations use localhost
+redirect URIs and show an honest "not connected" state until credentials exist.
+
 - Select a VPS after checking current total price, latency, CPU/RAM, NVMe, transfer, support and recovery features. Target 4 vCPU, 8 GB RAM, 100–160 GB NVMe; budget target ₹700–₹1,200/month with up to ₹1,800 if justified.
 - Configure a domain and DNS.
 - Create Google OAuth credentials and approve required scopes.
