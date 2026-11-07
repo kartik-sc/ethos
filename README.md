@@ -156,6 +156,32 @@ FastAPI serves OpenAPI docs at `/api/docs` outside production.
 | PUT / DELETE | `/api/v1/habits/{id}/logs/{date}` | Write or clear one day's entry; returns the fresh summary |
 | GET | `/api/v1/habits/{id}/history?weeks=12` | Whole weeks of day states, Monday first, for the heatmap |
 
+| GET | `/api/v1/inbox?view=open\|processed` | Captures: open oldest first; processed newest first (last 100) |
+| POST | `/api/v1/inbox` | Capture text |
+| PATCH | `/api/v1/inbox/{id}` | Edit an open capture |
+| POST | `/api/v1/inbox/{id}/convert` | Create a task, project or goal from it (one transaction) |
+| POST | `/api/v1/inbox/{id}/resolve` · `…/reopen` | Mark handled or dismissed; reopen. Nothing is discarded |
+| GET / PATCH | `/api/v1/preferences` | `archive_after_days` (default 30) |
+| GET | `/api/v1/quotes` · `/api/v1/quotes/today` | Quotes; today's pick (fixed for the day) |
+| POST / PUT / DELETE | `/api/v1/quotes[/{id}]` | Manage quotes |
+| GET | `/api/v1/dashboard` | Deadline radar (overdue + next 30 days) and task counts |
+| GET | `/api/v1/search?q=&kind=&area=&status=` | Search tasks, projects, goals, habits and captures |
+
+### Records over time
+
+- **Trash:** deleted tasks, projects, goals and habits stay restorable for 30 days. The worker
+  checks hourly and removes older ones for good (projects take their tasks with them; a goal only
+  unlinks). Every Trash row shows the days left.
+- **Archive:** done and cancelled tasks older than `archive_after_days` move from Done to
+  Archived. Archived tasks still appear in search. Archiving never deletes.
+- **Inbox:** processing records the outcome (`task`, `project`, `goal`, `done`, `dismissed`) and
+  the created record's id. Items get an amber marker after 24 hours and a red one after 48.
+- **Quotes:** each quote stores when it was last shown; the least recently shown goes next, so
+  the whole collection cycles before any repeats.
+- **Search:** case-insensitive substring match on titles and descriptions (capture text for
+  Inbox), up to 20 per type. Trashed records are excluded. Notes will match on title, folder and
+  tags only. Press `/` anywhere outside a text field to open it.
+
 ### Habit rules
 
 `app/habits/rules.py` holds the pure rules, tested without a database:

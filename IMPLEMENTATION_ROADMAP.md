@@ -18,16 +18,16 @@ This is the short execution checklist. The full product and technical requiremen
 
 ## Phase 1 — Usable personal workspace
 
-- [ ] Google OAuth single-user login and owner allowlist.
-- [ ] Core data model and migrations.
+- [ ] Google OAuth single-user login and owner allowlist. *(waiting on the owner's OAuth client)*
+- [x] Core data model and migrations.
 - [x] Tasks, projects, goals and habits CRUD.
-- [ ] Chronological Inbox with process/edit/dismiss/convert actions.
-- [ ] Trash and restore; configurable archive behaviour.
+- [x] Chronological Inbox with process/edit/dismiss/convert actions.
+- [x] Trash and restore; configurable archive behaviour.
 - [ ] Notes: raw Markdown, nested folders, tags, wiki-links and backlinks.
 - [ ] Two-minute dirty autosave and basic note version history.
-- [ ] Global search with Notes limited to title/folder/tag matches.
-- [ ] Home Command Centre and dedicated module pages.
-- [ ] Manual quotes and daily rotation.
+- [ ] Global search with Notes limited to title/folder/tag matches. *(search done; Notes join it with the Notes slice)*
+- [x] Home Command Centre and dedicated module pages. *(agenda shows "not connected" until Phase 2)*
+- [x] Manual quotes and daily rotation.
 
 **Gate:** user can manage day-to-day records within Ethos without external capture integrations.
 
@@ -53,7 +53,7 @@ This is the short execution checklist. The full product and technical requiremen
 - [ ] Immediate execution for clear commands; clarification only when essential.
 - [ ] Duplicate detection and confirmation.
 - [ ] Brain-dump classification without task-subtask decomposition.
-- [ ] 24-hour and 48-hour Inbox ageing indicators.
+- [x] 24-hour and 48-hour Inbox ageing indicators.
 - [ ] iPhone Shortcuts capture endpoint.
 - [ ] WhatsApp Business capture/notification integration.
 - [ ] Browser extension for full-page and selected-text Markdown clipping.
