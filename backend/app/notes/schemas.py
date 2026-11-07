@@ -51,6 +51,9 @@ class NoteSave(BaseModel):
     tags: list[RawTag] = Field(max_length=30)
     # The version the editor started from. A mismatch means someone else saved in between.
     base_version: int
+    # Set when overwriting after a conflict: the version being replaced gets its own snapshot,
+    # so resolving a conflict never loses either side.
+    preserve_current: bool = False
 
 
 class NoteRef(BaseModel):

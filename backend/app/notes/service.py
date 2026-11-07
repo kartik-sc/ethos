@@ -292,14 +292,14 @@ def _claim_dangling_links(session: Session, note: Note) -> None:
     )
 
 
-def _snapshot(session: Session, note: Note, now: datetime) -> None:
+def _snapshot(session: Session, note: Note, now: datetime, *, separate: bool = False) -> None:
     latest = session.scalars(
         select(NoteVersion)
         .where(NoteVersion.note_id == note.id)
         .order_by(NoteVersion.saved_at.desc())
         .limit(1)
     ).first()
-    if latest is not None and now - latest.saved_at < SNAPSHOT_WINDOW:
+    if not separate and latest is not None and now - latest.saved_at < SNAPSHOT_WINDOW:
         latest.title, latest.content, latest.saved_at = note.title, note.content, now
     else:
         session.add(
@@ -341,6 +341,13 @@ def save_note(session: Session, note: Note, data: NoteSave, now: datetime) -> No
     _ensure_title_free(session, data.title, note.id)
     _folder(session, data.folder_id)
     renamed = data.title != note.title
+    if data.preserve_current:
+        replaced_at = now - timedelta(microseconds=1)
+        session.add(
+            NoteVersion(
+                note_id=note.id, title=note.title, content=note.content, saved_at=replaced_at
+            )
+        )
     note.title, note.content, note.folder_id = data.title, data.content, data.folder_id
     note.tags = _tags(session, data.tags)
     note.version += 1
@@ -349,7 +356,7 @@ def save_note(session: Session, note: Note, data: NoteSave, now: datetime) -> No
     _sync_links(session, note)
     if renamed:
         _claim_dangling_links(session, note)
-    _snapshot(session, note, now)
+    _snapshot(session, note, now, separate=data.preserve_current)
     session.commit()
     session.refresh(note)
     return note

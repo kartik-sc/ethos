@@ -148,3 +148,20 @@ def test_tree_lists_tags_in_use(client: TestClient) -> None:
     gone = create(client, "B", tags=["old"])
     client.delete(f"{NOTES}/{gone['id']}")
     assert client.get(f"{NOTES}/tree").json()["tags"] == ["dbms"]
+
+
+def test_keeping_mine_after_a_conflict_preserves_theirs_in_history(client: TestClient) -> None:
+    mine = create(client, "Shared", content="original")
+    theirs = save(client, mine, content="their edit").json()
+
+    assert save(client, mine, content="my edit").status_code == 409
+    kept = save(
+        client, mine, content="my edit", base_version=theirs["version"], preserve_current=True
+    )
+
+    assert kept.status_code == 200
+    contents = [
+        client.get(f"{NOTES}/{mine['id']}/versions/{version['id']}").json()["content"]
+        for version in client.get(f"{NOTES}/{mine['id']}/versions").json()
+    ]
+    assert contents[:2] == ["my edit", "their edit"]
