@@ -59,7 +59,7 @@ def session(migrated_database: None) -> Iterator[Session]:
     with get_sessionmaker()() as db_session:
         yield db_session
         db_session.rollback()
-        db_session.execute(text("TRUNCATE service_heartbeats"))
+        db_session.execute(text("TRUNCATE service_heartbeats, tasks CASCADE"))
         db_session.commit()
 
 

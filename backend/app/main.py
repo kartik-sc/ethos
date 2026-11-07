@@ -3,6 +3,7 @@ from fastapi import APIRouter, FastAPI
 from app.core.config import get_settings
 from app.core.logging import configure_logging
 from app.system.router import router as system_router
+from app.tasks.router import router as tasks_router
 
 
 def create_app() -> FastAPI:
@@ -20,6 +21,7 @@ def create_app() -> FastAPI:
 
     v1 = APIRouter(prefix="/api/v1")
     v1.include_router(system_router)
+    v1.include_router(tasks_router)
     app.include_router(v1)
     return app
 

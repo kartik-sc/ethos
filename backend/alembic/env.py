@@ -1,7 +1,8 @@
 from alembic import context
 from sqlalchemy import create_engine, pool
 
-import app.system.models  # noqa: F401  (registers tables on Base.metadata)
+import app.system.models
+import app.tasks.models  # noqa: F401
 from app.core.config import get_settings
 from app.core.db import Base
 from app.core.logging import configure_logging
