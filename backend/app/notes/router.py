@@ -118,20 +118,27 @@ def get_note(note_id: uuid.UUID, session: SessionDep) -> NoteRead:
 
 @router.put("/notes/{note_id}", responses={**NOT_FOUND, **CONFLICT})
 def save_note(note_id: uuid.UUID, data: NoteSave, session: SessionDep) -> Any:
-    """409 with `{"detail", "current"}` when the note was saved elsewhere since it was loaded."""
+    """Saves, merging with a newer version when `base` is sent and the edits don't overlap.
+
+    409 with `{"detail", "current", "merged_with_markers"}` when they do (or `base` is missing).
+    """
     note = _note(session, note_id)
     try:
         with _rules():
-            note = service.save_note(session, note, data, datetime.now(UTC))
+            note, merged = service.save_note(session, note, data, datetime.now(UTC))
     except service.StaleSaveError as stale:
         current = service.read(session, stale.current)
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
             content=jsonable_encoder(
-                {"detail": "This note changed since you opened it", "current": current}
+                {
+                    "detail": "This note changed since you opened it",
+                    "current": current,
+                    "merged_with_markers": stale.with_markers,
+                }
             ),
         )
-    return service.read(session, note)
+    return service.read(session, note).model_copy(update={"merged": merged})
 
 
 @router.delete("/notes/{note_id}", status_code=status.HTTP_204_NO_CONTENT, responses=NOT_FOUND)

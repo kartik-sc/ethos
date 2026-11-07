@@ -7,6 +7,7 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
 from app.goals.models import Goal
+from app.notes.merge import merge_tags, merge_text, merge_value
 from app.notes.models import Folder, LinkKind, Note, NoteLink, NoteVersion, Tag, note_tags
 from app.notes.schemas import (
     FolderCreate,
@@ -53,11 +54,13 @@ class NotesError(Exception):
 
 
 class StaleSaveError(Exception):
-    """The note changed since the editor loaded it. Nothing was written."""
+    """The note changed since the editor loaded it and could not be merged. Nothing was written."""
 
-    def __init__(self, current: Note) -> None:
+    def __init__(self, current: Note, with_markers: str | None = None) -> None:
         super().__init__("stale save")
         self.current = current
+        # Both versions of each conflicting region between markers, for merging by hand.
+        self.with_markers = with_markers
 
 
 # Folders
@@ -345,9 +348,33 @@ def create_note(session: Session, data: NoteCreate, now: datetime) -> Note:
     return note
 
 
-def save_note(session: Session, note: Note, data: NoteSave, now: datetime) -> Note:
-    if data.base_version != note.version:
+def _merge_stale(note: Note, data: NoteSave) -> NoteSave:
+    """Three-way merge of a stale save against the current note, or StaleSaveError."""
+    base = data.base
+    if base is None:
         raise StaleSaveError(note)
+    current_tags = [tag.name for tag in note.tags]
+    content = merge_text(base.content, data.content, note.content)
+    title, title_conflict = merge_value(base.title, data.title, note.title)
+    folder_id, folder_conflict = merge_value(base.folder_id, data.folder_id, note.folder_id)
+    if content.conflicts or title_conflict or folder_conflict:
+        raise StaleSaveError(note, content.with_markers if content.conflicts else None)
+    tags = merge_tags(normalize_tags(base.tags), normalize_tags(data.tags), current_tags)
+    return NoteSave(
+        title=title,
+        content=content.text,
+        folder_id=folder_id,
+        tags=tags,
+        base_version=note.version,
+        preserve_current=True,
+    )
+
+
+def save_note(session: Session, note: Note, data: NoteSave, now: datetime) -> tuple[Note, bool]:
+    """Returns the saved note and whether it had to be merged with a newer version."""
+    merged = data.base_version != note.version
+    if merged:
+        data = _merge_stale(note, data)
     _ensure_title_free(session, data.title, note.id)
     _folder(session, data.folder_id)
     renamed = data.title != note.title
@@ -369,7 +396,7 @@ def save_note(session: Session, note: Note, data: NoteSave, now: datetime) -> No
     _snapshot(session, note, now, separate=data.preserve_current)
     session.commit()
     session.refresh(note)
-    return note
+    return note, merged
 
 
 def trash_note(session: Session, note: Note, now: datetime) -> None:

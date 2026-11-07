@@ -44,6 +44,15 @@ class NoteCreate(BaseModel):
     tags: list[RawTag] = Field(default_factory=list, max_length=30)
 
 
+class NoteBase(BaseModel):
+    """The note as the editor loaded it: the common ancestor for a three-way merge."""
+
+    title: str
+    content: Content
+    folder_id: uuid.UUID | None
+    tags: list[RawTag] = Field(max_length=30)
+
+
 class NoteSave(BaseModel):
     title: Title
     content: Content
@@ -54,6 +63,8 @@ class NoteSave(BaseModel):
     # Set when overwriting after a conflict: the version being replaced gets its own snapshot,
     # so resolving a conflict never loses either side.
     preserve_current: bool = False
+    # When sent, a stale save is merged with the newer version instead of refused outright.
+    base: NoteBase | None = None
 
 
 class NoteRef(BaseModel):
@@ -86,6 +97,8 @@ class NoteRead(NoteSummary):
     created_at: datetime
     links: list[LinkRead]
     backlinks: list[NoteRef]
+    # True when this save was merged with a version saved elsewhere.
+    merged: bool = False
 
 
 class NoteTree(BaseModel):

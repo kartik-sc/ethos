@@ -165,3 +165,53 @@ def test_keeping_mine_after_a_conflict_preserves_theirs_in_history(client: TestC
         for version in client.get(f"{NOTES}/{mine['id']}/versions").json()
     ]
     assert contents == ["my edit", "their edit"]
+
+
+def base_of(note: dict[str, Any]) -> dict[str, Any]:
+    return {key: note[key] for key in ("title", "content", "folder_id", "tags")}
+
+
+def test_a_stale_save_with_its_base_merges_non_overlapping_edits(client: TestClient) -> None:
+    opened = create(client, "Plan", content="intro\nmiddle\nend\n", tags=["a"])
+    save(client, opened, content="intro (theirs)\nmiddle\nend\n", tags=["a", "theirs"])
+
+    response = save(
+        client,
+        opened,
+        content="intro\nmiddle\nend (mine)\n",
+        tags=["a", "mine"],
+        base=base_of(opened),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["merged"] is True
+    assert body["content"] == "intro (theirs)\nmiddle\nend (mine)\n"
+    assert body["tags"] == ["a", "mine", "theirs"]
+    assert body["version"] == 3
+    history = client.get(f"{NOTES}/{opened['id']}/versions").json()
+    previous = client.get(f"{NOTES}/{opened['id']}/versions/{history[1]['id']}").json()
+    assert previous["content"] == "intro (theirs)\nmiddle\nend\n"
+
+
+def test_overlapping_edits_are_refused_with_a_marked_up_merge(client: TestClient) -> None:
+    opened = create(client, "Plan", content="line\n")
+    save(client, opened, content="line (theirs)\n")
+
+    response = save(client, opened, content="line (mine)\n", base=base_of(opened))
+
+    assert response.status_code == 409
+    body = response.json()
+    assert body["current"]["content"] == "line (theirs)\n"
+    assert body["merged_with_markers"] == (
+        "<<<<<<< yours\nline (mine)\n=======\nline (theirs)\n>>>>>>> other version\n"
+    )
+    assert client.get(f"{NOTES}/{opened['id']}").json()["content"] == "line (theirs)\n"
+
+
+def test_conflicting_renames_are_refused(client: TestClient) -> None:
+    opened = create(client, "Plan")
+    save(client, opened, title="Their title")
+    response = save(client, opened, title="My title", base=base_of(opened))
+    assert response.status_code == 409
+    assert response.json()["merged_with_markers"] is None
