@@ -1,5 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { useQuery } from "@/lib/query";
 import { apiGet, apiSend } from "@/lib/api";
 
 /** Server-side preferences (mirrors backend/app/preferences). Theme lives in the browser. */

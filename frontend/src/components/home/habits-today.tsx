@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { LogButton, LogForm } from "@/components/habits/log-controls";
-import { RecentStrip } from "@/components/habits/recent-strip";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useHabits } from "@/hooks/use-habits";
@@ -44,9 +43,6 @@ function TodayRow({ habit }: { habit: Habit }) {
             {habit.summary.streak > 0 &&
               ` · ${habit.summary.streak}${habit.summary.streak_unit === "days" ? "d" : "w"} streak`}
           </p>
-        </div>
-        <div className="hidden sm:block">
-          <RecentStrip days={habit.summary.recent} />
         </div>
       </div>
       <AnimatePresence initial={false}>

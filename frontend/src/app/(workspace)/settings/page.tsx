@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { PageHeader } from "@/components/page-header";
 import { ArchiveSetting } from "@/components/settings/archive-setting";
+import { QuotesSetting } from "@/components/settings/quotes-setting";
 import { ThemeSetting } from "@/components/settings/theme-setting";
 import { DEFAULT_TIMEZONE } from "@/lib/time";
 
@@ -62,6 +63,13 @@ export default function SettingsPage() {
             <span className="font-mono text-xs text-muted-foreground">30 days</span>
           </SettingRow>
         </div>
+      </section>
+
+      <section id="quotes" aria-labelledby="home-heading" className="scroll-mt-8">
+        <h2 id="home-heading" className="micro-label">
+          Home
+        </h2>
+        <QuotesSetting />
       </section>
 
       <section aria-labelledby="time-heading">

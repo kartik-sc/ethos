@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 
+import { DeadlineRadar } from "@/components/home/deadline-radar";
 import { Greeting } from "@/components/home/greeting";
 import { HabitsToday } from "@/components/home/habits-today";
+import { AgendaPanel, QuoteCard, TaskStrip } from "@/components/home/home-panels";
 import { NextActionPanel } from "@/components/home/next-action";
 import { SystemReadout } from "@/components/home/system-readout";
 
@@ -9,10 +11,20 @@ export const metadata: Metadata = { title: "Command Centre" };
 
 export default function CommandCentrePage() {
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-8 md:gap-10 md:px-10 md:py-14">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 md:px-10 md:py-12">
       <Greeting />
-      <NextActionPanel />
-      <HabitsToday />
+      <div className="grid gap-6 lg:grid-cols-5">
+        <div className="flex min-w-0 flex-col gap-6 lg:col-span-3">
+          <AgendaPanel />
+          <NextActionPanel />
+          <TaskStrip />
+          <DeadlineRadar />
+        </div>
+        <div className="flex min-w-0 flex-col gap-6 lg:col-span-2">
+          <HabitsToday />
+          <QuoteCard />
+        </div>
+      </div>
       <SystemReadout />
     </div>
   );
