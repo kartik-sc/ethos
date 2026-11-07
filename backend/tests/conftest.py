@@ -55,7 +55,9 @@ def migrated_database() -> Iterator[None]:
 
 
 def _truncate(db_session: Session) -> None:
-    db_session.execute(text("TRUNCATE service_heartbeats, tasks, projects, goals, habits CASCADE"))
+    db_session.execute(
+        text("TRUNCATE service_heartbeats, tasks, projects, goals, habits, inbox_items CASCADE")
+    )
     db_session.commit()
 
 

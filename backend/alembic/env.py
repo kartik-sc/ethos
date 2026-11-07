@@ -4,6 +4,7 @@ from sqlalchemy import create_engine, pool
 # Register every table on Base.metadata.
 import app.goals.models
 import app.habits.models
+import app.inbox.models
 import app.projects.models
 import app.system.models
 import app.tasks.models  # noqa: F401
