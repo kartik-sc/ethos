@@ -177,6 +177,22 @@ FastAPI serves OpenAPI docs at `/api/docs` outside production.
 | POST | `/api/v1/notes/import` | Up to 500 Markdown files with relative paths; folders are created or reused |
 | GET | `/api/v1/note-folders/{id}/export` | A folder's notes (with subfolders) as `{path, content}` files |
 
+### Analytics
+
+`GET /api/v1/analytics?period=week|month&offset=0` (0 = current, −1 = previous…; up to 104 weeks
+or 24 months back). Weeks run Monday to Sunday and months are calendar months, both in the
+owner's timezone; every number comes with the window before it for comparison.
+
+- **Tasks:** completed, cancelled and created; completions per day and per life area.
+- **Deadlines:** *met* = completed on or before the due date; *missed* = the date has passed
+  without that. Deadlines still ahead are neither. Cancelled tasks are left out.
+- **Habits:** done out of what came due. Today, and a weekly habit's current week, only count
+  once done; what is still possible is reported as *open*, never as missed. A weekly habit's
+  week belongs to the window its Monday falls in.
+- **Inbox:** captured, processed and median time to process. **Notes:** notes saved.
+- **Observations** (`app/analytics/rules.py`) are plain statements generated from the numbers,
+  e.g. "Met 3 of 4 deadlines that fell in this week." No advice, praise or motivation.
+
 ### Command palette
 
 `Ctrl+K` anywhere (or the terminal button on the phone's top bar). Plain text + Enter goes to the

@@ -66,7 +66,7 @@ This is the short execution checklist. The full product and technical requiremen
 - [ ] Fifteen-minute and scheduled-time reminders.
 - [ ] Morning agenda and deadline alerts.
 - [ ] Sunday WhatsApp metrics-and-observations report.
-- [ ] Weekly/monthly analytics.
+- [x] Weekly/monthly analytics.
 - [ ] Habit consistency and selected quantitative tracking.
 - [ ] File storage on persistent VPS volume, 25 MB limit and overwrite confirmation.
 - [ ] Project-associated file links and backup inclusion.
