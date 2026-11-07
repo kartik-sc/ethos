@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { usePreferences } from "@/stores/preferences";
 
 import { EthosMark } from "./ethos-mark";
+import { InboxCount } from "./inbox-count";
 import { SidebarToggle } from "./sidebar-toggle";
 import { ThemeToggle } from "./theme-toggle";
 import { WithActive } from "./with-active";
@@ -67,6 +68,7 @@ function SidebarLinkView({ item, active }: { item: NavItem; active: boolean }) {
         )}
       />
       <span className="relative truncate">{item.label}</span>
+      {item.href === "/inbox" && <InboxCount />}
     </Link>
   );
 }

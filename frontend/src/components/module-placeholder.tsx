@@ -12,10 +12,6 @@ const modules = {
     description: "Weekly and monthly numbers, comparisons and factual observations.",
     empty: "Analytics arrive once tasks and habits are recording history.",
   },
-  inbox: {
-    description: "Unprocessed captures, oldest first.",
-    empty: "Inbox capture and processing arrive with the Phase 1 workspace.",
-  },
 } as const;
 
 export type ModuleKey = keyof typeof modules;
