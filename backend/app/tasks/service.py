@@ -95,7 +95,9 @@ def list_tasks(
     view: TaskView,
     project_id: uuid.UUID | None = None,
     goal_id: uuid.UUID | None = None,
+    archive_before: datetime | None = None,
 ) -> Sequence[Task]:
+    """`archive_before` splits closed tasks: newer ones are "done", older ones "archived"."""
     query = select(Task)
     if project_id is not None:
         query = query.where(Task.project_id == project_id)
@@ -110,13 +112,16 @@ def list_tasks(
         query = query.where(Task.deleted_at.is_(None), Task.status == TaskStatus.OPEN).order_by(
             Task.due_date.asc().nulls_last(), priority_order, Task.created_at
         )
-    elif view == "done":
+    elif view in ("done", "archived"):
         closed_at = func.coalesce(Task.completed_at, Task.cancelled_at)
-        query = (
-            query.where(Task.deleted_at.is_(None), Task.status != TaskStatus.OPEN)
-            .order_by(closed_at.desc())
-            .limit(DONE_VIEW_LIMIT)
-        )
+        query = query.where(Task.deleted_at.is_(None), Task.status != TaskStatus.OPEN)
+        if archive_before is not None:
+            query = query.where(
+                closed_at >= archive_before if view == "done" else closed_at < archive_before
+            )
+        query = query.order_by(closed_at.desc())
+        if view == "done":
+            query = query.limit(DONE_VIEW_LIMIT)
     else:
         query = query.where(Task.deleted_at.is_not(None)).order_by(Task.deleted_at.desc())
     return session.scalars(query).all()

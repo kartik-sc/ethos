@@ -1,0 +1,37 @@
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+
+from sqlalchemy import delete
+from sqlalchemy.orm import Session
+
+from app.goals.models import Goal
+from app.habits.models import Habit
+from app.projects.models import Project
+from app.tasks.models import Task
+
+RETENTION = timedelta(days=30)
+
+
+@dataclass(frozen=True)
+class Purged:
+    tasks: int
+    projects: int
+    goals: int
+    habits: int
+
+
+def purge_expired(session: Session, now: datetime) -> Purged:
+    """Permanently deletes records that have been in Trash longer than the retention period.
+
+    Projects cascade to their tasks and habits to their logs in the database. Goals only
+    unlink: their projects, tasks and habits are independent records.
+    """
+    cutoff = now - RETENTION
+    counts = {}
+    for name, model in (("tasks", Task), ("projects", Project), ("goals", Goal), ("habits", Habit)):
+        deleted = session.scalars(
+            delete(model).where(model.deleted_at < cutoff).returning(model.id)
+        ).all()
+        counts[name] = len(deleted)
+    session.commit()
+    return Purged(**counts)

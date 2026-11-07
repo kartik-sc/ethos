@@ -12,7 +12,7 @@ from app.tasks.models import TaskPriority, TaskStatus
 
 PlannedMinutes = Annotated[int, Field(ge=5, le=720)]
 
-TaskView = Literal["open", "done", "trash"]
+TaskView = Literal["open", "done", "archived", "trash"]
 
 
 class TaskCreate(BaseModel):

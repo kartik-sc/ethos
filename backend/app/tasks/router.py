@@ -1,7 +1,7 @@
 import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.core.config import Settings, get_settings
 from app.core.db import get_session
 from app.goals.service import GoalUnavailableError
+from app.preferences.service import get_preferences
 from app.tasks import service
 from app.tasks.models import Task
 from app.tasks.schemas import (
@@ -41,7 +42,9 @@ def list_tasks(
     project_id: Annotated[uuid.UUID | None, Query()] = None,
     goal_id: Annotated[uuid.UUID | None, Query()] = None,
 ) -> list[TaskRead]:
-    tasks = service.list_tasks(session, view, project_id, goal_id)
+    archive_days = get_preferences(session).archive_after_days
+    archive_before = datetime.now(UTC) - timedelta(days=archive_days)
+    tasks = service.list_tasks(session, view, project_id, goal_id, archive_before)
     return [TaskRead.model_validate(task) for task in tasks]
 
 

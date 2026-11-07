@@ -5,6 +5,7 @@ from app.core.logging import configure_logging
 from app.goals.router import router as goals_router
 from app.habits.router import router as habits_router
 from app.inbox.router import router as inbox_router
+from app.preferences.router import router as preferences_router
 from app.projects.router import router as projects_router
 from app.system.router import router as system_router
 from app.tasks.router import router as tasks_router
@@ -30,6 +31,7 @@ def create_app() -> FastAPI:
     v1.include_router(goals_router)
     v1.include_router(habits_router)
     v1.include_router(inbox_router)
+    v1.include_router(preferences_router)
     app.include_router(v1)
     return app
 
