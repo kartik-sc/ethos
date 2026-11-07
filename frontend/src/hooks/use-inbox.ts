@@ -23,7 +23,7 @@ function useInboxMutation<TVariables>(mutationFn: (variables: TVariables) => Pro
     mutationFn,
     onSettled: () =>
       Promise.all(
-        [inboxKeys.all, ["tasks"], ["projects"], ["goals"]].map((queryKey) =>
+        [inboxKeys.all, ["tasks"], ["projects"], ["goals"], ["analytics"]].map((queryKey) =>
           queryClient.invalidateQueries({ queryKey }),
         ),
       ),

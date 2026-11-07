@@ -22,8 +22,8 @@ export function useRunCommand() {
       apiSend<CommandResult>("POST", "/commands/run", variables),
     onSuccess: () =>
       Promise.all(
-        ["tasks", "projects", "goals", "habits", "inbox", "notes", "commands"].map((key) =>
-          queryClient.invalidateQueries({ queryKey: [key] }),
+        ["tasks", "projects", "goals", "habits", "inbox", "notes", "commands", "analytics"].map(
+          (key) => queryClient.invalidateQueries({ queryKey: [key] }),
         ),
       ),
   });

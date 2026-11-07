@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { AnalyticsSnapshot } from "@/components/home/analytics-snapshot";
 import { DeadlineRadar } from "@/components/home/deadline-radar";
 import { Greeting } from "@/components/home/greeting";
 import { HabitsToday } from "@/components/home/habits-today";
@@ -22,6 +23,7 @@ export default function CommandCentrePage() {
         </div>
         <div className="flex min-w-0 flex-col gap-6 lg:col-span-2">
           <HabitsToday />
+          <AnalyticsSnapshot />
           <QuoteCard />
         </div>
       </div>
