@@ -113,3 +113,21 @@ export function useUpdateFolder() {
 export function useDeleteFolder() {
   return useNotesMutation((id: string) => apiSend("DELETE", `/note-folders/${id}`));
 }
+
+export interface ImportResult {
+  created: { id: string; title: string }[];
+  renamed: { path: string; title: string }[];
+  skipped: { path: string; reason: string }[];
+  folders_created: number;
+}
+
+export function useImportNotes() {
+  return useNotesMutation(
+    (data: { folder_id: string | null; files: { path: string; content: string }[] }) =>
+      apiSend<ImportResult>("POST", "/notes/import", data),
+  );
+}
+
+export function fetchFolderExport(folderId: string) {
+  return apiGet<{ path: string; content: string }[]>(`/note-folders/${folderId}/export`);
+}

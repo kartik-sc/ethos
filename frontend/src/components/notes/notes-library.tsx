@@ -14,6 +14,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
+import { ExportFolderButton, ImportNotes } from "@/components/notes/note-transfer";
 import { WithActive } from "@/components/shell/with-active";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -161,6 +162,7 @@ function FolderItem({ node, depth, open, toggle, onNewNote, onError }: FolderIte
             >
               <FolderPlus />
             </Button>
+            <ExportFolderButton folderId={node.folder.id} name={node.folder.name} />
             <Button
               size="icon-xs"
               variant="ghost"
@@ -382,6 +384,8 @@ export function NotesLibrary() {
           )
         )}
       </div>
+
+      <ImportNotes />
 
       <Link
         href="/notes/trash"
