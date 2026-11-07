@@ -21,7 +21,7 @@ def progress(client: TestClient, goal_id: str) -> dict[str, int]:
 
 def test_new_goal_has_empty_progress(client: TestClient) -> None:
     goal = post(client, GOALS, title="Land a summer internship", target_date="2027-03-31")
-    assert goal["progress"] == {"done": 0, "total": 0, "projects": 0}
+    assert goal["progress"] == {"done": 0, "total": 0, "projects": 0, "habits": 0}
 
 
 def test_progress_counts_direct_and_project_tasks_once(client: TestClient) -> None:
@@ -37,8 +37,8 @@ def test_progress_counts_direct_and_project_tasks_once(client: TestClient) -> No
     cancelled = post(client, TASKS, title="Dropped", goal_id=goal["id"])
     client.patch(f"{TASKS}/{cancelled['id']}", json={"status": "cancelled"})
 
-    assert progress(client, goal["id"]) == {"done": 1, "total": 2, "projects": 1}
-    assert progress(client, other["id"]) == {"done": 0, "total": 1, "projects": 0}
+    assert progress(client, goal["id"]) == {"done": 1, "total": 2, "projects": 1, "habits": 0}
+    assert progress(client, other["id"]) == {"done": 0, "total": 1, "projects": 0, "habits": 0}
 
 
 def test_trashing_a_goal_keeps_its_projects_and_tasks(client: TestClient) -> None:

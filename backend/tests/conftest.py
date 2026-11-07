@@ -54,13 +54,19 @@ def migrated_database() -> Iterator[None]:
     command.downgrade(config, "base")
 
 
+def _truncate(db_session: Session) -> None:
+    db_session.execute(text("TRUNCATE service_heartbeats, tasks, projects, goals, habits CASCADE"))
+    db_session.commit()
+
+
 @pytest.fixture
 def session(migrated_database: None) -> Iterator[Session]:
     with get_sessionmaker()() as db_session:
+        # Before as well as after: migrations seed data (the LeetCode habit).
+        _truncate(db_session)
         yield db_session
         db_session.rollback()
-        db_session.execute(text("TRUNCATE service_heartbeats, tasks, projects, goals CASCADE"))
-        db_session.commit()
+        _truncate(db_session)
 
 
 @pytest.fixture

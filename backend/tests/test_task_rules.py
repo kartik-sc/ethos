@@ -2,8 +2,9 @@ from datetime import UTC, date, datetime, timedelta
 
 import pytest
 
+from app.core.clock import local_today
 from app.tasks.models import Task, TaskPriority, TaskStatus
-from app.tasks.service import apply_status, describe_urgency, local_today, pick_next_action
+from app.tasks.service import apply_status, describe_urgency, pick_next_action
 
 TODAY = date(2026, 11, 7)
 EPOCH = datetime(2026, 11, 1, tzinfo=UTC)

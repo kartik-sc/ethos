@@ -45,6 +45,7 @@ class GoalProgress(BaseModel):
     done: int = 0
     total: int = 0
     projects: int = 0
+    habits: int = 0
 
 
 class GoalRead(BaseModel):

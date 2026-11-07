@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
+from app.core.clock import local_today
 from app.goals.service import ensure_live_goal
 from app.projects.models import Project
 from app.tasks.models import NextActionOverride, Task, TaskPriority, TaskStatus
@@ -30,10 +31,6 @@ class NextActionPick:
     task: Task
     reason: str
     overridden: bool = False
-
-
-def local_today(now: datetime, timezone: str) -> date:
-    return now.astimezone(ZoneInfo(timezone)).date()
 
 
 def _days_until(task: Task, today: date) -> int | None:

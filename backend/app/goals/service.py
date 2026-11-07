@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.goals.models import Goal
 from app.goals.schemas import GoalCreate, GoalProgress, GoalUpdate, GoalView
+from app.habits.models import Habit
 from app.projects.models import Project
 from app.tasks.models import Task, TaskStatus
 
@@ -66,12 +67,21 @@ def progress(session: Session, goal_ids: Iterable[uuid.UUID]) -> dict[uuid.UUID,
         .group_by(Project.goal_id)
     ).all()
 
+    habit_rows = session.execute(
+        select(Habit.goal_id, func.count())
+        .where(Habit.goal_id.in_(ids), Habit.deleted_at.is_(None))
+        .group_by(Habit.goal_id)
+    ).all()
+
     result = {goal_id: GoalProgress() for goal_id in ids}
     for goal_id, done, total in task_rows:
         result[goal_id].done, result[goal_id].total = done, total
     for project_goal_id, count in project_rows:
         if project_goal_id is not None:
             result[project_goal_id].projects = count
+    for habit_goal_id, count in habit_rows:
+        if habit_goal_id is not None:
+            result[habit_goal_id].habits = count
     return result
 
 
