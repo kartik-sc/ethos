@@ -52,6 +52,8 @@ class HabitLine:
     title: str
     done: int
     expected: int
+    # Still possible this week or today; nothing is "done every time" while this is open.
+    open: int = 0
 
 
 @dataclass(frozen=True)
@@ -106,7 +108,7 @@ def observations(facts: Facts) -> list[str]:
     for habit in sorted(facts.habits, key=lambda h: h.done / h.expected if h.expected else 1):
         if habit.expected < 2:
             continue
-        if habit.done >= habit.expected:
+        if habit.done >= habit.expected and habit.open == 0:
             lines.append(
                 f"{habit.title}: done every time it was due ({habit.expected} of {habit.expected})."
             )

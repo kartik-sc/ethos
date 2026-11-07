@@ -1,5 +1,6 @@
 from collections import Counter
 from collections.abc import Mapping
+from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from statistics import median
 from zoneinfo import ZoneInfo
@@ -29,17 +30,27 @@ def _local(moment: datetime, zone: ZoneInfo) -> date:
     return moment.astimezone(zone).date()
 
 
+@dataclass(frozen=True)
+class Adherence:
+    done: int
+    # Scheduled days (or weekly targets) that have come due inside the window.
+    expected: int
+    # Still possible before the window's current day or week ends: today's entry, or the
+    # sessions left in a week that is still running. Never counted as missed.
+    open: int = 0
+
+
 def habit_adherence(
     habit: Habit, logs: Mapping[date, HabitLog], span: Window, today: date, start: date
-) -> tuple[int, int]:
-    """(done, expected) inside the window. Today and the current week only count once done."""
+) -> Adherence:
+    """Adherence inside the window. Today and the current week only count once done."""
     first = max(span.start, start)
     last = min(span.end, today)
     if first > last:
-        return 0, 0
+        return Adherence(0, 0)
 
     if habit.cadence is Cadence.DAILY:
-        done = expected = 0
+        done = expected = still_open = 0
         for day in Window(first, last).days:
             if not habit_rules.is_scheduled(habit, day):
                 continue
@@ -47,22 +58,29 @@ def habit_adherence(
             if day < today or met:
                 expected += 1
                 done += int(met)
-        return done, expected
+            else:
+                still_open += 1
+        return Adherence(done, expected, still_open)
 
     target = habit.times_per_week or 0
-    done = expected = 0
+    done = expected = still_open = 0
     monday = habit_rules.week_start(first)
     if monday < span.start:
         monday += timedelta(weeks=1)  # weeks belong to the window their Monday falls in
     while monday <= last:
         week = [monday + timedelta(days=n) for n in range(7)]
         met_count = min(target, sum(1 for day in week if habit_rules.is_met(habit, logs.get(day))))
-        # A week still running, or one the habit joined part-way, only counts what was done.
-        full_week = monday + timedelta(days=6) < today and monday >= start
+        finished = monday + timedelta(days=6) < today
         done += met_count
-        expected += target if full_week else met_count
+        if finished and monday >= start:
+            expected += target
+        else:
+            # A running week, or one the habit joined part-way, only counts what was done.
+            expected += met_count
+            if not finished:
+                still_open += target - met_count
         monday += timedelta(weeks=1)
-    return done, expected
+    return Adherence(done, expected, still_open)
 
 
 def _totals(session: Session, span: Window, today: date, zone: ZoneInfo) -> Totals:
@@ -109,9 +127,9 @@ def _totals(session: Session, span: Window, today: date, zone: ZoneInfo) -> Tota
             missed += 1
 
     habit_done = habit_expected = 0
-    for done, expected in (line[1:] for line in _habit_lines(session, span, today, zone)):
-        habit_done += done
-        habit_expected += expected
+    for _, adherence in _habit_lines(session, span, today, zone):
+        habit_done += adherence.done
+        habit_expected += adherence.expected
 
     captured = session.scalar(
         select(func.count()).where(InboxItem.created_at >= start, InboxItem.created_at < end)
@@ -140,7 +158,7 @@ def _totals(session: Session, span: Window, today: date, zone: ZoneInfo) -> Tota
 
 def _habit_lines(
     session: Session, span: Window, today: date, zone: ZoneInfo
-) -> list[tuple[Habit, int, int]]:
+) -> list[tuple[Habit, Adherence]]:
     habits = session.scalars(
         select(Habit)
         .where(Habit.deleted_at.is_(None))
@@ -151,9 +169,9 @@ def _habit_lines(
     for habit in habits:
         habit_logs = logs[habit.id]
         start = started_on(habit, habit_logs, str(zone))
-        done, expected = habit_adherence(habit, habit_logs, span, today, start)
-        if expected:
-            lines.append((habit, done, expected))
+        adherence = habit_adherence(habit, habit_logs, span, today, start)
+        if adherence.expected or adherence.open:
+            lines.append((habit, adherence))
     return lines
 
 
@@ -219,7 +237,8 @@ def report(
         overdue_now=overdue_now,
         top_area=named_areas[0] if named_areas else None,
         habits=[
-            rules.HabitLine(habit.title, done, expected) for habit, done, expected in habit_lines
+            rules.HabitLine(habit.title, line.done, line.expected, line.open)
+            for habit, line in habit_lines
         ],
         inbox_open=len(open_items),
         oldest_open_days=(today - _local(min(open_items), zone)).days if open_items else None,
@@ -240,8 +259,14 @@ def report(
             for area, count in sorted(per_area.items(), key=lambda item: (-item[1], str(item[0])))
         ],
         habits=[
-            HabitAdherence(id=habit.id, title=habit.title, done=done, expected=expected)
-            for habit, done, expected in habit_lines
+            HabitAdherence(
+                id=habit.id,
+                title=habit.title,
+                done=line.done,
+                expected=line.expected,
+                open=line.open,
+            )
+            for habit, line in habit_lines
         ],
         inbox_median_hours=round(median(hours), 1) if hours else None,
         overdue_now=overdue_now,

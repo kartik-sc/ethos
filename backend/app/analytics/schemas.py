@@ -37,6 +37,8 @@ class HabitAdherence(BaseModel):
     done: int
     # Scheduled days (or weekly targets) that have come due inside the window.
     expected: int
+    # Still possible today or this week; not counted as missed.
+    open: int
 
 
 class AnalyticsReport(BaseModel):

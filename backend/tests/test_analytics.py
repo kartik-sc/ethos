@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.analytics.rules import EN_DASH, Window
-from app.analytics.service import habit_adherence, report
+from app.analytics.service import Adherence, habit_adherence, report
 from app.core.life_areas import LifeArea
 from app.habits.models import Cadence, Habit, HabitLog, Measure
 from app.inbox.models import InboxItem
@@ -109,14 +109,18 @@ def test_daily_adherence_counts_today_only_once_done() -> None:
     habit = daily([0, 1, 2, 3, 4, 5, 6])
     mon, tue, wed = date(2026, 11, 9), date(2026, 11, 10), TODAY
     start = date(2026, 1, 1)
-    assert habit_adherence(habit, logged(mon), WEEK, TODAY, start) == (1, 2)
-    assert habit_adherence(habit, logged(mon, tue, wed), WEEK, TODAY, start) == (3, 3)
+    assert habit_adherence(habit, logged(mon), WEEK, TODAY, start) == Adherence(1, 2, 1)
+    assert habit_adherence(habit, logged(mon, tue, wed), WEEK, TODAY, start) == Adherence(3, 3)
 
 
 def test_daily_adherence_ignores_rest_days_and_days_before_the_habit() -> None:
     weekdays_only = daily([0, 1, 2, 3, 4])
-    assert habit_adherence(weekdays_only, {}, WEEK, date(2026, 11, 16), date(2026, 1, 1)) == (0, 5)
-    assert habit_adherence(daily([0, 1, 2, 3, 4, 5, 6]), {}, WEEK, TODAY, TODAY) == (0, 0)
+    assert habit_adherence(
+        weekdays_only, {}, WEEK, date(2026, 11, 16), date(2026, 1, 1)
+    ) == Adherence(0, 5)
+    assert habit_adherence(daily([0, 1, 2, 3, 4, 5, 6]), {}, WEEK, TODAY, TODAY) == Adherence(
+        0, 0, 1
+    )
 
 
 def test_weekly_adherence_caps_at_target_and_spares_the_running_week() -> None:
@@ -128,10 +132,12 @@ def test_weekly_adherence_caps_at_target_and_spares_the_running_week() -> None:
         date(2026, 10, 13),
         *(date(2026, 10, d) for d in (26, 27)),
     )
-    assert habit_adherence(gym, entries, month, date(2026, 11, 11), date(2026, 1, 1)) == (6, 12)
+    assert habit_adherence(gym, entries, month, date(2026, 11, 11), date(2026, 1, 1)) == Adherence(
+        6, 12
+    )
 
     running = habit_adherence(gym, logged(date(2026, 11, 9)), WEEK, TODAY, date(2026, 1, 1))
-    assert running == (1, 1)
+    assert running == Adherence(1, 1, open=2)
 
 
 def test_inbox_numbers(session: Session) -> None:

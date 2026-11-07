@@ -99,3 +99,8 @@ def test_no_advice_words() -> None:
     text = " ".join(observations(BASE)).lower()
     for word in ("should", "try", "great", "keep it up", "consider", "well done"):
         assert word not in text
+
+
+def test_a_running_week_is_never_done_every_time() -> None:
+    running = replace(BASE, habits=[HabitLine("Gym", done=2, expected=2, open=1)])
+    assert not any(line.startswith("Gym") for line in observations(running))
