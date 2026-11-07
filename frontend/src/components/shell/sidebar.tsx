@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef } from "react";
 
+import { CommandButton } from "@/components/command/command-button";
 import { StatusDot } from "@/components/system/status-dot";
 import { SystemPill } from "@/components/system/system-pill";
 import { useHealth } from "@/hooks/use-health";
@@ -209,6 +210,9 @@ export function Sidebar() {
           <span className="font-mono text-sm font-semibold tracking-tight">ethos</span>
         </div>
 
+        <div className="px-2 pb-1">
+          <CommandButton />
+        </div>
         <nav aria-label="Primary" className="flex flex-1 flex-col gap-0.5 px-2 pt-2">
           <p className="micro-label px-3 pb-2">Workspace</p>
           {primaryNav.map((item) => (

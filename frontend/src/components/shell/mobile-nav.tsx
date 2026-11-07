@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { CommandButton } from "@/components/command/command-button";
 import { SystemPill } from "@/components/system/system-pill";
 import { primaryNav, settingsNav } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,7 @@ export function MobileTopBar() {
       <EthosMark className="size-5" />
       <span className="font-mono text-sm font-semibold tracking-tight">ethos</span>
       <div className="ml-auto flex items-center">
+        <CommandButton compact />
         <SystemPill compact />
         <ThemeToggle />
         <Link

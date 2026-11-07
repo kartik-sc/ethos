@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { CommandPalette } from "@/components/command/command-palette";
+
 import { MobileNav, MobileTopBar } from "./mobile-nav";
 import { Sidebar } from "./sidebar";
 
@@ -20,6 +22,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
       </div>
       <MobileNav />
+      <CommandPalette />
     </div>
   );
 }
