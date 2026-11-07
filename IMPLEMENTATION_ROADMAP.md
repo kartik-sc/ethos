@@ -23,9 +23,9 @@ This is the short execution checklist. The full product and technical requiremen
 - [x] Tasks, projects, goals and habits CRUD.
 - [x] Chronological Inbox with process/edit/dismiss/convert actions.
 - [x] Trash and restore; configurable archive behaviour.
-- [ ] Notes: raw Markdown, nested folders, tags, wiki-links and backlinks.
-- [ ] Two-minute dirty autosave and basic note version history.
-- [ ] Global search with Notes limited to title/folder/tag matches. *(search done; Notes join it with the Notes slice)*
+- [x] Notes: raw Markdown, nested folders, tags, wiki-links and backlinks.
+- [x] Two-minute dirty autosave and basic note version history.
+- [x] Global search with Notes limited to title/folder/tag matches.
 - [x] Home Command Centre and dedicated module pages. *(agenda shows "not connected" until Phase 2)*
 - [x] Manual quotes and daily rotation.
 

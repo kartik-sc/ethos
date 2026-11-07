@@ -167,6 +167,32 @@ FastAPI serves OpenAPI docs at `/api/docs` outside production.
 | GET | `/api/v1/dashboard` | Deadline radar (overdue + next 30 days) and task counts |
 | GET | `/api/v1/search?q=&kind=&area=&status=` | Search tasks, projects, goals, habits and captures |
 
+| GET | `/api/v1/notes/tree` | Folders, live notes (no bodies) and tags in use |
+| POST | `/api/v1/notes` | Create a note |
+| GET / PUT | `/api/v1/notes/{id}` | Read with links and backlinks; save with `base_version` (409 + `current` if stale) |
+| DELETE · POST | `/api/v1/notes/{id}` · `…/restore` | Trash and restore |
+| GET | `/api/v1/notes/{id}/versions[/{versionId}]` | Version history and one snapshot |
+| GET | `/api/v1/notes/link-targets?q=` | `[[` autocomplete; `task:`, `project:`, `goal:` prefixes search records |
+| POST / PATCH / DELETE | `/api/v1/note-folders[/{id}]` | Nested folders; only empty folders delete |
+
+### Notes
+
+- **Raw Markdown**, edited as source. No preview, templates, attachments or AI, per the spec.
+- **Saving:** autosave every 2 minutes while there are changes, `Ctrl+S`, and a last save when
+  leaving the note. Network and server failures retry (15 s → 2 min); the draft is never dropped.
+  Closing the tab with unsaved changes asks first.
+- **Conflicts:** every save carries the version it started from. If the note changed elsewhere the
+  save is refused, the editor keeps your text and shows the other version. *Keep mine* overwrites
+  and stores the other version in History; *Use the other version* asks before discarding yours.
+  Automatic three-way merging is Phase 4.
+- **History:** a snapshot per save, with saves under 10 minutes apart sharing one; the latest 50
+  are kept. Restoring a version saves it as a new one.
+- **Wiki-links:** `[[Title]]`, `[[Title|shown text]]`, and `[[task:…]]`, `[[project:…]]`,
+  `[[goal:…]]`. Links are stored by id, so renaming a target never breaks them; a link written
+  before its note exists resolves when that note is created. Titles are unique (ignoring case).
+- **Search** matches note titles, folder names and tags only; note text is never searched.
+- Notes in Trash follow the same 30-day purge as everything else.
+
 ### Records over time
 
 - **Trash:** deleted tasks, projects, goals and habits stay restorable for 30 days. The worker
