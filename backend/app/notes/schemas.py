@@ -124,3 +124,39 @@ class LinkTarget(BaseModel):
     kind: LinkKind
     id: uuid.UUID
     title: str
+
+
+ImportPath = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=500)]
+
+
+class ImportFile(BaseModel):
+    # Relative path such as "CS/Algorithms/Sorting.md"; folders are created to match.
+    path: ImportPath
+    content: Content
+
+
+class ImportRequest(BaseModel):
+    folder_id: uuid.UUID | None = None
+    files: list[ImportFile] = Field(min_length=1, max_length=500)
+
+
+class ImportRenamed(BaseModel):
+    path: str
+    title: str
+
+
+class ImportSkipped(BaseModel):
+    path: str
+    reason: str
+
+
+class ImportResult(BaseModel):
+    created: list[NoteRef]
+    renamed: list[ImportRenamed]
+    skipped: list[ImportSkipped]
+    folders_created: int
+
+
+class ExportFile(BaseModel):
+    path: str
+    content: str

@@ -10,12 +10,15 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.core.db import get_session
-from app.notes import service
+from app.notes import service, transfer
 from app.notes.models import Folder, Note
 from app.notes.schemas import (
+    ExportFile,
     FolderCreate,
     FolderRead,
     FolderUpdate,
+    ImportRequest,
+    ImportResult,
     LinkTarget,
     NoteCreate,
     NoteRead,
@@ -84,7 +87,20 @@ def delete_folder(folder_id: uuid.UUID, session: SessionDep) -> None:
         service.delete_folder(session, _folder(session, folder_id))
 
 
+@router.get("/note-folders/{folder_id}/export", responses=NOT_FOUND)
+def export_folder(folder_id: uuid.UUID, session: SessionDep) -> list[ExportFile]:
+    """The folder's notes, including subfolders, as Markdown files at relative paths."""
+    return transfer.export_folder(session, _folder(session, folder_id))
+
+
 # Notes
+
+
+@router.post("/notes/import", responses=CONFLICT)
+def import_notes(data: ImportRequest, session: SessionDep) -> ImportResult:
+    """Markdown files become notes; folders in their paths are created or reused."""
+    with _rules():
+        return transfer.import_markdown(session, data, datetime.now(UTC))
 
 
 @router.get("/notes/tree")

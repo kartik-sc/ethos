@@ -66,7 +66,7 @@ class StaleSaveError(Exception):
 # Folders
 
 
-def _folder(session: Session, folder_id: uuid.UUID | None) -> Folder | None:
+def ensure_folder(session: Session, folder_id: uuid.UUID | None) -> Folder | None:
     if folder_id is None:
         return None
     folder = session.get(Folder, folder_id)
@@ -88,7 +88,7 @@ def _name_taken(
 
 
 def create_folder(session: Session, data: FolderCreate) -> Folder:
-    _folder(session, data.parent_id)
+    ensure_folder(session, data.parent_id)
     if _name_taken(session, data.parent_id, data.name, None):
         raise NotesError("A folder with that name already exists here")
     folder = Folder(name=data.name, parent_id=data.parent_id)
@@ -102,11 +102,11 @@ def update_folder(session: Session, folder: Folder, data: FolderUpdate) -> Folde
     parent_id = fields.get("parent_id", folder.parent_id)
     name = fields.get("name") or folder.name
     if "parent_id" in fields:
-        ancestor = _folder(session, parent_id)
+        ancestor = ensure_folder(session, parent_id)
         while ancestor is not None:
             if ancestor.id == folder.id:
                 raise NotesError("A folder can't move inside itself")
-            ancestor = _folder(session, ancestor.parent_id)
+            ancestor = ensure_folder(session, ancestor.parent_id)
     if _name_taken(session, parent_id, name, folder.id):
         raise NotesError("A folder with that name already exists here")
     folder.name, folder.parent_id = name, parent_id
@@ -256,7 +256,7 @@ def _resolve(session: Session, kind: LinkKind, name: str) -> uuid.UUID | None:
     )
 
 
-def _sync_links(session: Session, note: Note) -> None:
+def sync_links(session: Session, note: Note) -> None:
     """Keeps a resolved link's target even after the target is renamed; re-resolves the rest."""
     labels = parse_links(note.content)
     existing = {
@@ -282,7 +282,7 @@ def _sync_links(session: Session, note: Note) -> None:
             current.target_id = _resolve(session, kind, name)
 
 
-def _claim_dangling_links(session: Session, note: Note) -> None:
+def claim_dangling_links(session: Session, note: Note) -> None:
     """Links written before this note existed (or under its new title) now point at it."""
     session.execute(
         update(NoteLink)
@@ -295,7 +295,7 @@ def _claim_dangling_links(session: Session, note: Note) -> None:
     )
 
 
-def _snapshot(session: Session, note: Note, now: datetime, *, separate: bool = False) -> None:
+def snapshot(session: Session, note: Note, now: datetime, *, separate: bool = False) -> None:
     latest = session.scalars(
         select(NoteVersion)
         .where(NoteVersion.note_id == note.id)
@@ -330,7 +330,7 @@ def _latest_snapshot_matches(session: Session, note: Note) -> bool:
 
 def create_note(session: Session, data: NoteCreate, now: datetime) -> Note:
     _ensure_title_free(session, data.title, None)
-    _folder(session, data.folder_id)
+    ensure_folder(session, data.folder_id)
     note = Note(
         title=data.title,
         content=data.content,
@@ -341,9 +341,9 @@ def create_note(session: Session, data: NoteCreate, now: datetime) -> Note:
     )
     session.add(note)
     session.flush()
-    _sync_links(session, note)
-    _claim_dangling_links(session, note)
-    _snapshot(session, note, now)
+    sync_links(session, note)
+    claim_dangling_links(session, note)
+    snapshot(session, note, now)
     session.commit()
     return note
 
@@ -376,7 +376,7 @@ def save_note(session: Session, note: Note, data: NoteSave, now: datetime) -> tu
     if merged:
         data = _merge_stale(note, data)
     _ensure_title_free(session, data.title, note.id)
-    _folder(session, data.folder_id)
+    ensure_folder(session, data.folder_id)
     renamed = data.title != note.title
     if data.preserve_current and not _latest_snapshot_matches(session, note):
         replaced_at = now - timedelta(microseconds=1)
@@ -390,10 +390,10 @@ def save_note(session: Session, note: Note, data: NoteSave, now: datetime) -> tu
     note.version += 1
     note.updated_at = now
     session.flush()
-    _sync_links(session, note)
+    sync_links(session, note)
     if renamed:
-        _claim_dangling_links(session, note)
-    _snapshot(session, note, now, separate=data.preserve_current)
+        claim_dangling_links(session, note)
+    snapshot(session, note, now, separate=data.preserve_current)
     session.commit()
     session.refresh(note)
     return note, merged
