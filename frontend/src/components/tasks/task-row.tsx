@@ -26,15 +26,24 @@ interface TaskRowProps {
   expanded: boolean;
   onExpandedChange: (expanded: boolean) => void;
   onTrash: (task: Task) => void;
+  showProject: boolean;
 }
 
-function Meta({ task, view, today }: Pick<TaskRowProps, "task" | "view" | "today">) {
+function Meta({
+  task,
+  view,
+  today,
+  showProject,
+}: Pick<TaskRowProps, "task" | "view" | "today" | "showProject">) {
   const now = useNow();
   const due = task.due_date ? describeDue(task.due_date, today) : null;
   const closedAt = view === "trash" ? task.deleted_at : (task.completed_at ?? task.cancelled_at);
 
   return (
     <span className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[0.6875rem] text-faint">
+      {showProject && task.project && (
+        <span className="max-w-40 truncate text-muted-foreground">{task.project.title}</span>
+      )}
       {task.area && <span>{areaLabel(task.area).toLowerCase()}</span>}
       {task.planned_minutes !== null && <span>{formatMinutes(task.planned_minutes)}</span>}
       {view === "open" && due && <span className={dueTone[due.tone]}>{due.text}</span>}
@@ -48,7 +57,15 @@ function Meta({ task, view, today }: Pick<TaskRowProps, "task" | "view" | "today
   );
 }
 
-export function TaskRow({ task, view, today, expanded, onExpandedChange, onTrash }: TaskRowProps) {
+export function TaskRow({
+  task,
+  view,
+  today,
+  expanded,
+  onExpandedChange,
+  onTrash,
+  showProject,
+}: TaskRowProps) {
   const update = useUpdateTask();
   const restore = useRestoreTask();
   const closed = task.status !== "open";
@@ -99,7 +116,7 @@ export function TaskRow({ task, view, today, expanded, onExpandedChange, onTrash
             )}
             {task.title}
           </span>
-          <Meta task={task} view={view} today={today} />
+          <Meta task={task} view={view} today={today} showProject={showProject} />
         </button>
 
         {view === "trash" ? (

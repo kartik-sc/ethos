@@ -15,6 +15,8 @@ function task(title: string, due_date: string | null): Task {
     priority: "normal",
     due_date,
     planned_minutes: null,
+    project_id: null,
+    project: null,
     created_at: "2026-11-01T00:00:00Z",
     updated_at: "2026-11-01T00:00:00Z",
     completed_at: null,

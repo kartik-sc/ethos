@@ -42,6 +42,7 @@ describe("QuickAdd", () => {
       title: "Finish DBMS assignment",
       priority: "high",
       due_date: null,
+      project_id: null,
     });
   });
 

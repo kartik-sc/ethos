@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 
 import { EmptyState } from "@/components/empty-state";
+import { ViewTabs } from "@/components/view-tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRestoreTask, useTasks, useTrashTask } from "@/hooks/use-tasks";
 import { useToday } from "@/hooks/use-today";
@@ -41,39 +42,6 @@ const empty: Record<TaskView, { icon: typeof ListTodo; title: string; body: stri
   },
 };
 
-function ViewTabs({ view, onChange }: { view: TaskView; onChange: (view: TaskView) => void }) {
-  return (
-    <div role="tablist" aria-label="Task views" className="flex items-center gap-1">
-      {views.map(({ value, label }) => {
-        const selected = value === view;
-        return (
-          <button
-            key={value}
-            type="button"
-            role="tab"
-            aria-selected={selected}
-            onClick={() => onChange(value)}
-            className={cn(
-              "relative h-7 rounded-md px-3 text-xs font-medium transition-colors outline-none",
-              "focus-visible:ring-2 focus-visible:ring-ring",
-              selected ? "text-foreground" : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {selected && (
-              <motion.span
-                layoutId="task-view"
-                className="absolute inset-0 rounded-md bg-accent"
-                transition={{ type: "spring", stiffness: 520, damping: 40 }}
-              />
-            )}
-            <span className="relative">{label}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 function LoadingRows() {
   return (
     <div className="divide-y divide-border" aria-hidden="true">
@@ -92,11 +60,11 @@ interface UndoState {
   timer: ReturnType<typeof setTimeout>;
 }
 
-export function TaskBoard() {
+export function TaskBoard({ projectId }: { projectId?: string }) {
   const [view, setView] = useState<TaskView>("open");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [undo, setUndo] = useState<UndoState | null>(null);
-  const tasks = useTasks(view);
+  const tasks = useTasks(view, projectId);
   const today = useToday();
   const trash = useTrashTask();
   const restore = useRestoreTask();
@@ -114,6 +82,15 @@ export function TaskBoard() {
     setUndo(null);
   }
 
+  const emptyCopy =
+    projectId && view === "open"
+      ? {
+          ...empty.open,
+          title: "No open tasks here",
+          body: "Tasks added above belong to this project.",
+        }
+      : empty[view];
+
   const sections: TaskSection[] =
     tasks.data && today
       ? view === "open"
@@ -123,11 +100,13 @@ export function TaskBoard() {
 
   return (
     <div className="flex flex-col gap-6">
-      <QuickAdd />
+      <QuickAdd projectId={projectId} />
 
       <div className="flex items-center justify-between gap-3">
         <ViewTabs
-          view={view}
+          label="Task views"
+          views={views}
+          value={view}
           onChange={(next) => {
             setView(next);
             setExpandedId(null);
@@ -161,8 +140,8 @@ export function TaskBoard() {
           </button>
         </div>
       ) : sections.length === 0 || sections.every((section) => section.tasks.length === 0) ? (
-        <EmptyState icon={empty[view].icon} title={empty[view].title}>
-          {empty[view].body}
+        <EmptyState icon={emptyCopy.icon} title={emptyCopy.title}>
+          {emptyCopy.body}
         </EmptyState>
       ) : (
         <div className="flex flex-col gap-5">
@@ -190,6 +169,7 @@ export function TaskBoard() {
                       expanded={expandedId === task.id}
                       onExpandedChange={(open) => setExpandedId(open ? task.id : null)}
                       onTrash={moveToTrash}
+                      showProject={!projectId}
                     />
                   ))}
                 </AnimatePresence>

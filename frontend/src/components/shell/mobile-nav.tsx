@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 
 import { SystemPill } from "@/components/system/system-pill";
-import { isActive, primaryNav, settingsNav } from "@/lib/navigation";
+import { primaryNav, settingsNav } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
 import { EthosMark } from "./ethos-mark";
 import { ThemeToggle } from "./theme-toggle";
+import { WithActive } from "./with-active";
 
 export function MobileTopBar() {
   const SettingsIcon = settingsNav.icon;
@@ -33,7 +33,6 @@ export function MobileTopBar() {
 }
 
 export function MobileNav() {
-  const pathname = usePathname();
   const items = primaryNav.filter((item) => item.mobile);
 
   return (
@@ -43,21 +42,24 @@ export function MobileNav() {
     >
       <ul className="grid grid-cols-5">
         {items.map((item) => {
-          const active = isActive(item.href, pathname);
           const Icon = item.icon;
           return (
             <li key={item.href}>
-              <Link
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex h-14 flex-col items-center justify-center gap-1 text-[0.6875rem] font-medium",
-                  active ? "text-primary" : "text-muted-foreground",
+              <WithActive href={item.href}>
+                {(active) => (
+                  <Link
+                    href={item.href}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "flex h-14 flex-col items-center justify-center gap-1 text-[0.6875rem] font-medium",
+                      active ? "text-primary" : "text-muted-foreground",
+                    )}
+                  >
+                    <Icon className="size-[1.125rem]" aria-hidden="true" />
+                    {item.href === "/" ? "Home" : item.label}
+                  </Link>
                 )}
-              >
-                <Icon className="size-[1.125rem]" aria-hidden="true" />
-                {item.href === "/" ? "Home" : item.label}
-              </Link>
+              </WithActive>
             </li>
           );
         })}

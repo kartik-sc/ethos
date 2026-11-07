@@ -5,14 +5,16 @@ import type { NextAction, Task, TaskCreate, TaskUpdate, TaskView } from "@/lib/t
 
 export const taskKeys = {
   all: ["tasks"] as const,
-  view: (view: TaskView) => ["tasks", view] as const,
+  view: (view: TaskView, projectId?: string) => ["tasks", view, projectId ?? "all"] as const,
   nextAction: ["tasks", "next-action"] as const,
 };
 
-export function useTasks(view: TaskView) {
+export function useTasks(view: TaskView, projectId?: string) {
+  const query = new URLSearchParams({ view });
+  if (projectId) query.set("project_id", projectId);
   return useQuery({
-    queryKey: taskKeys.view(view),
-    queryFn: ({ signal }) => apiGet<Task[]>(`/tasks?view=${view}`, { signal }),
+    queryKey: taskKeys.view(view, projectId),
+    queryFn: ({ signal }) => apiGet<Task[]>(`/tasks?${query}`, { signal }),
   });
 }
 
@@ -53,7 +55,12 @@ function useTaskMutation<TVariables>(
     onError: (_error, _variables, context) => {
       for (const [key, tasks] of context?.snapshot ?? []) queryClient.setQueryData(key, tasks);
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: taskKeys.all }),
+    // Project task counts change with every task change too.
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: taskKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ["projects"] }),
+      ]),
   });
 }
 

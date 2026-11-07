@@ -1,4 +1,5 @@
 // Mirrors backend/app/tasks/schemas.py.
+import type { ProjectRef } from "./projects";
 
 export type TaskStatus = "open" | "done" | "cancelled";
 export type TaskPriority = "low" | "normal" | "high";
@@ -15,6 +16,8 @@ export interface Task {
   /** ISO date (YYYY-MM-DD) in the owner's timezone. */
   due_date: string | null;
   planned_minutes: number | null;
+  project_id: string | null;
+  project: ProjectRef | null;
   created_at: string;
   updated_at: string;
   completed_at: string | null;
@@ -29,6 +32,7 @@ export interface TaskCreate {
   priority?: TaskPriority;
   due_date?: string | null;
   planned_minutes?: number | null;
+  project_id?: string | null;
 }
 
 export type TaskUpdate = Partial<TaskCreate> & { status?: TaskStatus };

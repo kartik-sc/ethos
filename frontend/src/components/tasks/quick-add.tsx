@@ -19,7 +19,7 @@ const priorityText: Record<TaskPriority, string> = {
   low: "text-faint/60",
 };
 
-export function QuickAdd() {
+export function QuickAdd({ projectId }: { projectId?: string }) {
   const create = useCreateTask();
   const titleRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState("");
@@ -31,7 +31,7 @@ export function QuickAdd() {
     const trimmed = title.trim();
     if (!trimmed || create.isPending) return;
     create.mutate(
-      { title: trimmed, priority, due_date: dueDate || null },
+      { title: trimmed, priority, due_date: dueDate || null, project_id: projectId ?? null },
       {
         onSuccess: () => {
           setTitle("");

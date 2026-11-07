@@ -3,11 +3,12 @@
 import { type FormEvent, type KeyboardEvent, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useProjects } from "@/hooks/use-projects";
 import { useUpdateTask } from "@/hooks/use-tasks";
 import { LIFE_AREAS, PRIORITIES } from "@/lib/tasks";
 import type { LifeArea, Task, TaskPriority, TaskUpdate } from "@/lib/types/tasks";
 
-import { fieldClass, labelClass } from "./controls";
+import { fieldClass, labelClass } from "@/components/form-controls";
 
 interface Draft {
   title: string;
@@ -16,6 +17,7 @@ interface Draft {
   priority: TaskPriority;
   area: LifeArea | "";
   planned_minutes: string;
+  project_id: string;
 }
 
 function toDraft(task: Task): Draft {
@@ -26,6 +28,7 @@ function toDraft(task: Task): Draft {
     priority: task.priority,
     area: task.area ?? "",
     planned_minutes: task.planned_minutes?.toString() ?? "",
+    project_id: task.project_id ?? "",
   };
 }
 
@@ -38,6 +41,7 @@ export function diffDraft(task: Task, draft: Draft): TaskUpdate {
     priority: draft.priority,
     area: draft.area || null,
     planned_minutes: draft.planned_minutes ? Number(draft.planned_minutes) : null,
+    project_id: draft.project_id || null,
   };
   return Object.fromEntries(
     Object.entries(next).filter(([key, value]) => task[key as keyof Task] !== value),
@@ -51,6 +55,7 @@ interface TaskEditorProps {
 
 export function TaskEditor({ task, onClose }: TaskEditorProps) {
   const update = useUpdateTask();
+  const projects = useProjects();
   const [draft, setDraft] = useState(() => toDraft(task));
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
     setDraft((current) => ({ ...current, [key]: value }));
@@ -103,7 +108,25 @@ export function TaskEditor({ task, onClose }: TaskEditorProps) {
         />
       </label>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <label className={`${labelClass} col-span-2 sm:col-span-1`}>
+          Project
+          <select
+            value={draft.project_id}
+            onChange={(event) => set("project_id", event.target.value)}
+            className={fieldClass}
+          >
+            <option value="">None</option>
+            {task.project && !projects.data?.some((project) => project.id === task.project_id) && (
+              <option value={task.project.id}>{task.project.title}</option>
+            )}
+            {projects.data?.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.title}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className={labelClass}>
           Due
           <input

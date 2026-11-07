@@ -38,6 +38,9 @@ production, the Next.js dev rewrite locally.
 - **Theme and sidebar state** are applied by a tiny inline script before first paint and
   stored in `localStorage`. This keeps every page statically prerenderable under Next 16's
   `cacheComponents`. Dark is the default; nothing switches automatically.
+- **Sidebar** floats by default: hover the left edge or the mark (top left) to slide it in, or
+  press `[` to dock it. Under Cache Components, active-link state is read in small Suspense
+  leaves (`components/shell/with-active.tsx`) so dynamic routes keep a prerendered shell.
 - **Logs** are JSON lines on stdout; Docker's `json-file` driver rotates them (10 MB × 5).
 
 ## Local development
@@ -134,6 +137,16 @@ FastAPI serves OpenAPI docs at `/api/docs` outside production.
 | POST | `/api/v1/tasks/{id}/restore` | Restore from Trash |
 | GET | `/api/v1/tasks/next-action` | The one highlighted task and why |
 | POST | `/api/v1/tasks/next-action/override` | Record that the owner picked a different task; honoured for the rest of the day |
+| GET | `/api/v1/projects?view=active\|trash` | Projects with live task counts and next task deadline |
+| POST | `/api/v1/projects` | Create a project |
+| GET / PATCH | `/api/v1/projects/{id}` | Read or partially update a project |
+| DELETE | `/api/v1/projects/{id}` | Move the project and its live tasks to Trash together |
+| POST | `/api/v1/projects/{id}/restore` | Restore the project and the tasks trashed with it |
+
+Tasks accept an optional `project_id` (`GET /api/v1/tasks?project_id=…` filters by it). A task
+whose project is in Trash cannot be restored on its own (`409`); restore the project instead.
+Group restore matches on the shared `deleted_at` timestamp, so tasks deleted individually before
+the project stay in Trash.
 
 ### Next Action rule
 

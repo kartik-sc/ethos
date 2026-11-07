@@ -3,12 +3,12 @@
 import { motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { Suspense, useCallback, useEffect, useRef } from "react";
 
 import { StatusDot } from "@/components/system/status-dot";
 import { SystemPill } from "@/components/system/system-pill";
 import { useHealth } from "@/hooks/use-health";
-import { isActive, type NavItem, primaryNav, settingsNav } from "@/lib/navigation";
+import { type NavItem, primaryNav, settingsNav } from "@/lib/navigation";
 import { summariseSystem } from "@/lib/system-status";
 import { cn } from "@/lib/utils";
 import { usePreferences } from "@/stores/preferences";
@@ -16,6 +16,7 @@ import { usePreferences } from "@/stores/preferences";
 import { EthosMark } from "./ethos-mark";
 import { SidebarToggle } from "./sidebar-toggle";
 import { ThemeToggle } from "./theme-toggle";
+import { WithActive } from "./with-active";
 
 const OPEN_DELAY_MS = 120;
 const CLOSE_DELAY_MS = 280;
@@ -27,7 +28,15 @@ function isTyping(target: EventTarget | null): boolean {
   );
 }
 
-function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
+function SidebarLink({ item }: { item: NavItem }) {
+  return (
+    <WithActive href={item.href}>
+      {(active) => <SidebarLinkView item={item} active={active} />}
+    </WithActive>
+  );
+}
+
+function SidebarLinkView({ item, active }: { item: NavItem; active: boolean }) {
   const Icon = item.icon;
 
   return (
@@ -99,8 +108,13 @@ function Launcher({
   );
 }
 
-export function Sidebar() {
+function CloseOnNavigate({ onNavigate }: { onNavigate: () => void }) {
   const pathname = usePathname();
+  useEffect(() => onNavigate(), [pathname, onNavigate]);
+  return null;
+}
+
+export function Sidebar() {
   const docked = usePreferences((state) => state.sidebarDocked);
   const open = usePreferences((state) => state.sidebarOpen);
   const setOpen = usePreferences((state) => state.setSidebarOpen);
@@ -114,8 +128,7 @@ export function Sidebar() {
     timer.current = setTimeout(() => setOpen(next), delay);
   };
   const cancel = () => clearTimeout(timer.current);
-
-  useEffect(() => setOpen(false), [pathname, setOpen]);
+  const closeNow = useCallback(() => setOpen(false), [setOpen]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -181,6 +194,9 @@ export function Sidebar() {
           !open && "floating:-translate-x-[calc(100%+1rem)] floating:opacity-0",
         )}
       >
+        <Suspense fallback={null}>
+          <CloseOnNavigate onNavigate={closeNow} />
+        </Suspense>
         <div className="flex h-14 items-center gap-2.5 px-4.5">
           <EthosMark className="shrink-0" />
           <span className="font-mono text-sm font-semibold tracking-tight">ethos</span>
@@ -189,12 +205,12 @@ export function Sidebar() {
         <nav aria-label="Primary" className="flex flex-1 flex-col gap-0.5 px-2 pt-2">
           <p className="micro-label px-3 pb-2">Workspace</p>
           {primaryNav.map((item) => (
-            <SidebarLink key={item.href} item={item} active={isActive(item.href, pathname)} />
+            <SidebarLink key={item.href} item={item} />
           ))}
         </nav>
 
         <div className="flex flex-col gap-0.5 border-t border-sidebar-border px-2 py-2">
-          <SidebarLink item={settingsNav} active={isActive(settingsNav.href, pathname)} />
+          <SidebarLink item={settingsNav} />
           <SystemPill />
           <div className="flex items-center gap-1 px-1 pt-1">
             <SidebarToggle />

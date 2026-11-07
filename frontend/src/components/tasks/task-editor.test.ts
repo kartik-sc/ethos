@@ -13,6 +13,8 @@ const task: Task = {
   priority: "normal",
   due_date: "2026-11-10",
   planned_minutes: null,
+  project_id: null,
+  project: null,
   created_at: "2026-11-01T00:00:00Z",
   updated_at: "2026-11-01T00:00:00Z",
   completed_at: null,
@@ -27,6 +29,7 @@ const unchanged = {
   priority: "normal" as const,
   area: "academics" as const,
   planned_minutes: "",
+  project_id: "",
 };
 
 describe("diffDraft", () => {

@@ -20,7 +20,7 @@ This is the short execution checklist. The full product and technical requiremen
 
 - [ ] Google OAuth single-user login and owner allowlist.
 - [ ] Core data model and migrations.
-- [ ] Tasks, projects, goals and habits CRUD. *(tasks done, with Next Action and override)*
+- [ ] Tasks, projects, goals and habits CRUD. *(tasks and projects done; goals and habits next)*
 - [ ] Chronological Inbox with process/edit/dismiss/convert actions.
 - [ ] Trash and restore; configurable archive behaviour.
 - [ ] Notes: raw Markdown, nested folders, tags, wiki-links and backlinks.
