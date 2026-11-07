@@ -2,12 +2,13 @@ import uuid
 from datetime import date, datetime
 from typing import Annotated, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from app.tasks.models import LifeArea, TaskPriority, TaskStatus
+from app.core.fields import Description, Title
+from app.core.life_areas import LifeArea
+from app.projects.schemas import ProjectRef
+from app.tasks.models import TaskPriority, TaskStatus
 
-Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
-Description = Annotated[str, StringConstraints(max_length=5000)]
 PlannedMinutes = Annotated[int, Field(ge=5, le=720)]
 
 TaskView = Literal["open", "done", "trash"]
@@ -20,6 +21,7 @@ class TaskCreate(BaseModel):
     priority: TaskPriority = TaskPriority.NORMAL
     due_date: date | None = None
     planned_minutes: PlannedMinutes | None = None
+    project_id: uuid.UUID | None = None
 
 
 class TaskUpdate(BaseModel):
@@ -32,6 +34,7 @@ class TaskUpdate(BaseModel):
     priority: TaskPriority | None = None
     due_date: date | None = None
     planned_minutes: PlannedMinutes | None = None
+    project_id: uuid.UUID | None = None
 
     @model_validator(mode="after")
     def required_fields_not_null(self) -> Self:
@@ -52,6 +55,8 @@ class TaskRead(BaseModel):
     priority: TaskPriority
     due_date: date | None
     planned_minutes: int | None
+    project_id: uuid.UUID | None
+    project: ProjectRef | None
     created_at: datetime
     updated_at: datetime
     completed_at: datetime | None

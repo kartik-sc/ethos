@@ -1,4 +1,6 @@
 import uuid
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from typing import Annotated, Any
 
@@ -32,13 +34,32 @@ def _load(session: Session, task_id: uuid.UUID, *, trashed: bool = False) -> Tas
 
 
 @router.get("")
-def list_tasks(session: SessionDep, view: Annotated[TaskView, Query()] = "open") -> list[TaskRead]:
-    return [TaskRead.model_validate(task) for task in service.list_tasks(session, view)]
+def list_tasks(
+    session: SessionDep,
+    view: Annotated[TaskView, Query()] = "open",
+    project_id: Annotated[uuid.UUID | None, Query()] = None,
+) -> list[TaskRead]:
+    tasks = service.list_tasks(session, view, project_id)
+    return [TaskRead.model_validate(task) for task in tasks]
+
+
+@contextmanager
+def _project_must_be_live(failure_status: int) -> Iterator[None]:
+    try:
+        yield
+    except service.ProjectUnavailableError:
+        detail = (
+            "Restore its project first"
+            if failure_status == status.HTTP_409_CONFLICT
+            else "Project not found"
+        )
+        raise HTTPException(failure_status, detail) from None
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_task(data: TaskCreate, session: SessionDep) -> TaskRead:
-    return TaskRead.model_validate(service.create_task(session, data))
+    with _project_must_be_live(status.HTTP_422_UNPROCESSABLE_CONTENT):
+        return TaskRead.model_validate(service.create_task(session, data))
 
 
 @router.get("/next-action")
@@ -63,7 +84,9 @@ def override_next_action(data: NextActionOverrideCreate, session: SessionDep) ->
 
 @router.patch("/{task_id}", responses=NOT_FOUND)
 def update_task(task_id: uuid.UUID, changes: TaskUpdate, session: SessionDep) -> TaskRead:
-    task = service.update_task(session, _load(session, task_id), changes, datetime.now(UTC))
+    task = _load(session, task_id)
+    with _project_must_be_live(status.HTTP_422_UNPROCESSABLE_CONTENT):
+        service.update_task(session, task, changes, datetime.now(UTC))
     return TaskRead.model_validate(task)
 
 
@@ -72,7 +95,12 @@ def trash_task(task_id: uuid.UUID, session: SessionDep) -> None:
     service.trash_task(session, _load(session, task_id), datetime.now(UTC))
 
 
-@router.post("/{task_id}/restore", responses=NOT_FOUND)
+@router.post(
+    "/{task_id}/restore",
+    responses={**NOT_FOUND, 409: {"description": "Its project is in Trash"}},
+)
 def restore_task(task_id: uuid.UUID, session: SessionDep) -> TaskRead:
-    task = service.restore_task(session, _load(session, task_id, trashed=True))
+    task = _load(session, task_id, trashed=True)
+    with _project_must_be_live(status.HTTP_409_CONFLICT):
+        service.restore_task(session, task)
     return TaskRead.model_validate(task)

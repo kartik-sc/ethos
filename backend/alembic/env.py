@@ -1,6 +1,7 @@
 from alembic import context
 from sqlalchemy import create_engine, pool
 
+import app.projects.models
 import app.system.models
 import app.tasks.models  # noqa: F401
 from app.core.config import get_settings

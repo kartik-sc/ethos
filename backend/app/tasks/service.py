@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
+from app.projects.models import Project
 from app.tasks.models import NextActionOverride, Task, TaskPriority, TaskStatus
 from app.tasks.schemas import TaskCreate, TaskUpdate, TaskView
 
@@ -17,6 +18,10 @@ PRIORITY_RANK = {TaskPriority.HIGH: 0, TaskPriority.NORMAL: 1, TaskPriority.LOW:
 
 class TaskNotFoundError(Exception):
     pass
+
+
+class ProjectUnavailableError(Exception):
+    """The referenced project does not exist or is in Trash."""
 
 
 @dataclass(frozen=True)
@@ -87,8 +92,12 @@ def apply_status(task: Task, status: TaskStatus, now: datetime) -> None:
     task.cancelled_at = now if status is TaskStatus.CANCELLED else None
 
 
-def list_tasks(session: Session, view: TaskView) -> Sequence[Task]:
+def list_tasks(
+    session: Session, view: TaskView, project_id: uuid.UUID | None = None
+) -> Sequence[Task]:
     query = select(Task)
+    if project_id is not None:
+        query = query.where(Task.project_id == project_id)
     if view == "open":
         priority_order = case(
             (Task.priority == TaskPriority.HIGH, 0),
@@ -117,7 +126,16 @@ def get_task(session: Session, task_id: uuid.UUID, *, trashed: bool = False) -> 
     return task
 
 
+def _ensure_live_project(session: Session, project_id: uuid.UUID | None) -> None:
+    if project_id is None:
+        return
+    project = session.get(Project, project_id)
+    if project is None or project.deleted_at is not None:
+        raise ProjectUnavailableError
+
+
 def create_task(session: Session, data: TaskCreate) -> Task:
+    _ensure_live_project(session, data.project_id)
     task = Task(**data.model_dump())
     session.add(task)
     session.commit()
@@ -127,6 +145,8 @@ def create_task(session: Session, data: TaskCreate) -> Task:
 def update_task(session: Session, task: Task, changes: TaskUpdate, now: datetime) -> Task:
     fields = changes.model_dump(exclude_unset=True)
     status = fields.pop("status", None)
+    if "project_id" in fields:
+        _ensure_live_project(session, fields["project_id"])
     for name, value in fields.items():
         setattr(task, name, value)
     if status is not None:
@@ -141,6 +161,8 @@ def trash_task(session: Session, task: Task, now: datetime) -> None:
 
 
 def restore_task(session: Session, task: Task) -> Task:
+    if task.project is not None and task.project.deleted_at is not None:
+        raise ProjectUnavailableError
     task.deleted_at = None
     session.commit()
     return task

@@ -1,7 +1,8 @@
 from collections.abc import Iterator
+from enum import StrEnum
 from functools import lru_cache
 
-from sqlalchemy import Engine, MetaData, create_engine
+from sqlalchemy import Engine, Enum, MetaData, create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.core.config import get_settings
@@ -17,6 +18,18 @@ NAMING_CONVENTION = {
 
 class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
+
+
+def string_enum(enum: type[StrEnum], name: str) -> Enum:
+    """VARCHAR plus a CHECK constraint: adding a value later is a plain migration."""
+    return Enum(
+        enum,
+        name=name,
+        native_enum=False,
+        create_constraint=True,
+        length=16,
+        values_callable=lambda members: [member.value for member in members],
+    )
 
 
 @lru_cache

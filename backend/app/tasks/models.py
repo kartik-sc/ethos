@@ -5,7 +5,6 @@ from enum import StrEnum
 from sqlalchemy import (
     Date,
     DateTime,
-    Enum,
     ForeignKey,
     Index,
     SmallInteger,
@@ -14,9 +13,11 @@ from sqlalchemy import (
     func,
     text,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.db import Base
+from app.core.db import Base, string_enum
+from app.core.life_areas import LifeArea
+from app.projects.models import Project
 
 
 class TaskStatus(StrEnum):
@@ -31,26 +32,6 @@ class TaskPriority(StrEnum):
     HIGH = "high"
 
 
-class LifeArea(StrEnum):
-    ACADEMICS = "academics"
-    CAREER = "career"
-    PERSONAL = "personal"
-    HEALTH = "health"
-    SOCIAL = "social"
-    LEARNING = "learning"
-
-
-def _string_enum(enum: type[StrEnum], name: str) -> Enum:
-    return Enum(
-        enum,
-        name=name,
-        native_enum=False,
-        create_constraint=True,
-        length=16,
-        values_callable=lambda members: [member.value for member in members],
-    )
-
-
 class Task(Base):
     __tablename__ = "tasks"
     __table_args__ = (
@@ -60,15 +41,18 @@ class Task(Base):
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, server_default=text("uuidv7()"))
     title: Mapped[str] = mapped_column(String(200))
     description: Mapped[str | None] = mapped_column(Text)
-    area: Mapped[LifeArea | None] = mapped_column(_string_enum(LifeArea, "task_area"))
+    area: Mapped[LifeArea | None] = mapped_column(string_enum(LifeArea, "task_area"))
     status: Mapped[TaskStatus] = mapped_column(
-        _string_enum(TaskStatus, "task_status"), default=TaskStatus.OPEN
+        string_enum(TaskStatus, "task_status"), default=TaskStatus.OPEN
     )
     priority: Mapped[TaskPriority] = mapped_column(
-        _string_enum(TaskPriority, "task_priority"), default=TaskPriority.NORMAL
+        string_enum(TaskPriority, "task_priority"), default=TaskPriority.NORMAL
     )
     due_date: Mapped[date | None] = mapped_column(Date)
     planned_minutes: Mapped[int | None] = mapped_column(SmallInteger)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -76,6 +60,8 @@ class Task(Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    project: Mapped[Project | None] = relationship(lazy="joined")
 
 
 class NextActionOverride(Base):
