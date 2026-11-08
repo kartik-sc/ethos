@@ -56,7 +56,7 @@ This is the short execution checklist. The full product and technical requiremen
 - [x] 24-hour and 48-hour Inbox ageing indicators.
 - [x] iPhone Shortcuts capture endpoint.
 - [ ] WhatsApp Business capture/notification integration.
-- [ ] Browser extension for full-page and selected-text Markdown clipping.
+- [x] Browser extension for full-page and selected-text Markdown clipping. *(not yet tried in a real browser profile)*
 
 **Gate:** all captures are acknowledged accurately, ambiguous items remain visible and provider failures are observable.
 

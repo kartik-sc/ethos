@@ -181,6 +181,8 @@ FastAPI serves OpenAPI docs at `/api/docs` outside production.
 | POST | `/api/v1/calendar/plan` | `{horizon_days, apply}`: preview or create blocks; lists what doesn't fit |
 | POST | `/api/v1/calendar/refresh` | Settle past habit sessions and book today's and tomorrow's now |
 | DELETE | `/api/v1/calendar/blocks/{id}` | Remove an Ethos block (fixed blocks: `409`) |
+| GET | `/api/v1/clip/folders` | Token-only: folders for the clipper, with the suggested one |
+| POST | `/api/v1/clip` | Token-only: save a web clip as a note (see `extension/`) |
 | POST | `/api/v1/capture` | `Authorization: Bearer eth_…`, body `{"text": …}`. Token-only; `401` otherwise |
 
 | GET | `/api/v1/notes/tree` | Folders, live notes (no bodies) and tags in use |
@@ -321,6 +323,13 @@ and planning runs it first so task work never takes a session's time.
 - After a timezone, working-day or session change, sessions that haven't started are rebooked
   at the same local clock time.
 - The migration gives the seeded LeetCode habit its 120-minute session.
+
+### Web clipper
+
+`extension/` is a dependency-free Manifest V3 extension for Chrome and Edge that clips the
+page, or the selection, to Notes as Markdown with its source and metadata. It authenticates
+with a capture token from Settings → Capture. Setup and details are in
+[`extension/README.md`](extension/README.md).
 
 ### Installing and the phone
 
