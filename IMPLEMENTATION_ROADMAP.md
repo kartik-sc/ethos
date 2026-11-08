@@ -71,7 +71,7 @@ This is the short execution checklist. The full product and technical requiremen
 - [x] File storage on persistent VPS volume, 25 MB limit and overwrite confirmation.
 - [ ] Project-associated file links and backup inclusion. *(links done; backups land with Phase 5)*
 - [x] Concurrent note edit conflict detection/merge.
-- [ ] PWA installability and purpose-built mobile screens.
+- [x] PWA installability and purpose-built mobile screens. *(phone notifications wait on a delivery channel)*
 
 **Gate:** scheduled work is durable, reports are factual and files/notes are recoverable.
 

@@ -322,6 +322,19 @@ and planning runs it first so task work never takes a session's time.
   at the same local clock time.
 - The migration gives the seeded LeetCode habit its 120-minute session.
 
+### Installing and the phone
+
+Ethos ships a web manifest (`src/app/manifest.ts`) and icons, so Chrome or Edge on Windows can
+install it (address bar → *Install*), and Safari on iPhone can *Add to Home Screen*, which opens
+it full-screen. There is deliberately no service worker: notes are online-only and nothing is
+cached for offline use. Installing from another device needs HTTPS, so it works on the VPS
+deployment rather than over a local IP.
+
+Below the `md` breakpoint Home becomes a lighter Today screen: a capture line (commands run,
+plain text goes to the Inbox), the agenda, the Next Action and today's habits. The radar,
+counts, analytics and quote stay on the desktop layout. The bottom bar reaches Tasks, Habits,
+Notes and Inbox.
+
 ### Shortcut capture
 
 Settings → Capture creates a token for a capture client such as an iPhone Shortcut. Tokens are
