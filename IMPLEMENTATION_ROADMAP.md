@@ -36,13 +36,13 @@ This is the short execution checklist. The full product and technical requiremen
 - [ ] Google Calendar OAuth scopes and connection status.
 - [ ] External event import/update handling.
 - [ ] Ethos time-block and all-day deadline event creation.
-- [ ] Task duration/default duration and slot selection.
+- [ ] Task duration/default duration and slot selection. *(per-task and default duration done)*
 - [ ] Fixed-commitment protection and overload reporting.
 - [ ] Pending sync queue and visible unsynced state.
 - [ ] Conflict resolution showing both versions.
 - [ ] Daily two-hour LeetCode same-day recovery.
 - [ ] Weekly recurring-habit redistribution.
-- [ ] Configurable timezone, default `Asia/Kolkata`.
+- [x] Configurable timezone, default `Asia/Kolkata`.
 
 **Gate:** calendar changes do not disappear, conflicts are explicit and fixed events are protected.
 

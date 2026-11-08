@@ -112,7 +112,7 @@ refuses to start if a value is missing or invalid, and validation errors never e
 |---|---|---|
 | `ENVIRONMENT` | backend | `development`, `test` or `production`. Production disables `/api/docs` |
 | `LOG_LEVEL` | backend | `DEBUG`, `INFO`, `WARNING`, `ERROR` |
-| `DEFAULT_TIMEZONE` | backend | IANA name; default `Asia/Kolkata` |
+| `DEFAULT_TIMEZONE` | backend | IANA name; default `Asia/Kolkata`. Only the initial value: the timezone is then set in Settings |
 | `DATABASE_URL` | backend | Must use `postgresql+psycopg://`. Compose builds it from `POSTGRES_*` |
 | `TEST_DATABASE_URL` | tests | Separate database; tests drop and recreate its schema |
 | `WORKER_HEARTBEAT_SECONDS` | worker, api | 5–300, default 30 |
@@ -162,7 +162,7 @@ FastAPI serves OpenAPI docs at `/api/docs` outside production.
 | PATCH | `/api/v1/inbox/{id}` | Edit an open capture |
 | POST | `/api/v1/inbox/{id}/convert` | Create a task, project or goal from it (one transaction) |
 | POST | `/api/v1/inbox/{id}/resolve` · `…/reopen` | Mark handled or dismissed; reopen. Nothing is discarded |
-| GET / PATCH | `/api/v1/preferences` | `archive_after_days` (default 30) |
+| GET / PATCH | `/api/v1/preferences` | `archive_after_days` (30), `timezone`, `default_task_minutes` (60), `day_starts_at`/`day_ends_at` (08:00–22:00) |
 | GET | `/api/v1/quotes` · `/api/v1/quotes/today` | Quotes; today's pick (fixed for the day) |
 | POST / PUT / DELETE | `/api/v1/quotes[/{id}]` | Manage quotes |
 | GET | `/api/v1/dashboard` | Deadline radar (overdue + next 30 days) and task counts |
@@ -335,7 +335,7 @@ the project stay in Trash.
 
 `app/tasks/service.py::rank_key` orders open tasks: overdue → due today or tomorrow → high
 priority → due within 7 days → everything else; ties go to higher priority, earlier deadline,
-then the oldest task. "Today" is the owner's timezone (`DEFAULT_TIMEZONE`). An override applies
+then the oldest task. "Today" is the owner's timezone (Settings → Time). An override applies
 until local midnight or until the chosen task is closed, and every override is stored in
 `next_action_overrides` for later pattern reports.
 
