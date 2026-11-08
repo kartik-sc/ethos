@@ -317,7 +317,7 @@ def test_worker_jobs_survive_unexpected_errors(monkeypatch: Any, session: Sessio
     def explode(*_args: Any, **_kwargs: Any) -> None:
         raise ValueError("boom")
 
-    monkeypatch.setattr(worker.habit_sessions, "refresh", explode)
+    monkeypatch.setattr(habit_sessions, "refresh", explode)
     monkeypatch.setattr(worker, "purge_expired", explode)
     worker.refresh_habit_sessions()
     worker.purge_trash()
