@@ -4,13 +4,14 @@ import { motion } from "motion/react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNow } from "@/hooks/use-now";
-import { DEFAULT_TIMEZONE, formatClock, formatLongDate, getDayPart, hourIn } from "@/lib/time";
+import { useTimezone } from "@/hooks/use-timezone";
+import { formatClock, formatLongDate, getDayPart, hourIn } from "@/lib/time";
 
 export function Greeting() {
   const now = useNow();
-  const timeZone = DEFAULT_TIMEZONE;
+  const timeZone = useTimezone();
 
-  if (!now) {
+  if (!now || !timeZone) {
     return (
       <div className="space-y-3" aria-busy="true">
         <Skeleton className="h-10 w-64" />

@@ -1,9 +1,11 @@
-import { DEFAULT_TIMEZONE, isoDateIn } from "@/lib/time";
+import { isoDateIn } from "@/lib/time";
 
 import { useNow } from "./use-now";
+import { useTimezone } from "./use-timezone";
 
-/** Today's date in the owner's timezone, or null before hydration. */
+/** Today's date in the owner's timezone, or null before hydration and preferences. */
 export function useToday(): string | null {
   const now = useNow();
-  return now ? isoDateIn(now, DEFAULT_TIMEZONE) : null;
+  const timeZone = useTimezone();
+  return now && timeZone ? isoDateIn(now, timeZone) : null;
 }

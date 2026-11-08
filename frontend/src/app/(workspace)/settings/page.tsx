@@ -6,7 +6,7 @@ import { ArchiveSetting } from "@/components/settings/archive-setting";
 import { CaptureTokensSetting } from "@/components/settings/capture-tokens-setting";
 import { QuotesSetting } from "@/components/settings/quotes-setting";
 import { ThemeSetting } from "@/components/settings/theme-setting";
-import { DEFAULT_TIMEZONE } from "@/lib/time";
+import { TimeSettings } from "@/components/settings/time-settings";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -80,15 +80,11 @@ export default function SettingsPage() {
         <CaptureTokensSetting />
       </section>
 
-      <section aria-labelledby="time-heading">
+      <section id="time" aria-labelledby="time-heading" className="scroll-mt-8">
         <h2 id="time-heading" className="micro-label">
           Time
         </h2>
-        <div className="divide-y divide-border">
-          <SettingRow label="Timezone" description="Becomes configurable with calendar scheduling.">
-            <span className="font-mono text-xs text-muted-foreground">{DEFAULT_TIMEZONE}</span>
-          </SettingRow>
-        </div>
+        <TimeSettings />
       </section>
     </div>
   );
