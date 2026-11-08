@@ -75,7 +75,10 @@ function AgendaRow({
         {block.sync === "failed" && <span className="text-destructive"> · sync failed</span>}
       </span>
       {block.fixed ? (
-        <Lock aria-label="Fixed" className="size-3 shrink-0 text-faint" />
+        <span className="inline-flex size-6 shrink-0 items-center justify-center">
+          <Lock aria-hidden="true" className="size-3 text-faint" />
+          <span className="sr-only">Fixed</span>
+        </span>
       ) : (
         <button
           type="button"

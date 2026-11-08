@@ -172,3 +172,16 @@
     @apply font-mono text-[0.6875rem] font-medium tracking-[0.08em] text-faint uppercase;
   }
 }
+
+/* Motion for React honours this through MotionConfig; CSS transitions and keyframes (skeleton
+   pulse, hover fades, the sidebar slide) need the same treatment. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

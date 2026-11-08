@@ -263,8 +263,7 @@ export function ProjectFiles({ projectId }: { projectId: string }) {
       {conflicts.map((conflict) => (
         <div
           key={`${conflict.file.name}-${conflict.file.lastModified}`}
-          role="alertdialog"
-          aria-label={`Replace ${conflict.existing.filename}?`}
+          role="alert"
           className="flex flex-wrap items-center gap-2 rounded-lg border border-warning/40 bg-warning/5 py-1.5 pr-1.5 pl-3 text-xs"
         >
           <span className="min-w-0 flex-1 text-muted-foreground">
