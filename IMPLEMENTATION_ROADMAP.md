@@ -36,9 +36,9 @@ This is the short execution checklist. The full product and technical requiremen
 - [ ] Google Calendar OAuth scopes and connection status.
 - [ ] External event import/update handling.
 - [ ] Ethos time-block and all-day deadline event creation.
-- [ ] Task duration/default duration and slot selection. *(per-task and default duration done)*
-- [ ] Fixed-commitment protection and overload reporting.
-- [ ] Pending sync queue and visible unsynced state.
+- [x] Task duration/default duration and slot selection.
+- [x] Fixed-commitment protection and overload reporting. *(against Ethos blocks; Google events join once connected)*
+- [ ] Pending sync queue and visible unsynced state. *(queue state and "not synced" UI done; the Google writer needs OAuth)*
 - [ ] Conflict resolution showing both versions.
 - [ ] Daily two-hour LeetCode same-day recovery.
 - [ ] Weekly recurring-habit redistribution.

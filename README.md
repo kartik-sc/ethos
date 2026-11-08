@@ -175,6 +175,11 @@ FastAPI serves OpenAPI docs at `/api/docs` outside production.
 
 | GET / POST | `/api/v1/integration-tokens` | Capture tokens; the secret is returned once, on creation |
 | DELETE | `/api/v1/integration-tokens/{id}` | Revoke (kept in the list as revoked) |
+| GET | `/api/v1/calendar/status` | `connected` (false until Google Calendar is linked) and blocks waiting to sync |
+| GET | `/api/v1/calendar/blocks?start=&end=` | Blocks overlapping local dates (default today) |
+| POST | `/api/v1/calendar/tasks/{id}/schedule` | One block in the earliest free slot; `409` with the reason if none |
+| POST | `/api/v1/calendar/plan` | `{horizon_days, apply}`: preview or create blocks; lists what doesn't fit |
+| DELETE | `/api/v1/calendar/blocks/{id}` | Remove an Ethos block (external events: `409`) |
 | POST | `/api/v1/capture` | `Authorization: Bearer eth_…`, body `{"text": …}`. Token-only; `401` otherwise |
 
 | GET | `/api/v1/notes/tree` | Folders, live notes (no bodies) and tags in use |
@@ -271,6 +276,27 @@ Inbox; `/` lists commands. Commands are parsed deterministically in the backend
 - Deleting a file or its project moves it to Trash; restoring the project restores the files
   trashed with it. The hourly worker pass purges expired rows and then removes blobs that no
   row references (older than an hour, so in-flight uploads are safe).
+
+### Scheduling
+
+`app/calendar/slots.py` holds the pure rules, tested without a database:
+
+- Work goes only into **free time inside the day window** (Settings → Time, default 08:00–22:00
+  in the owner's timezone), starting on a quarter hour, never before now.
+- **Nothing existing moves.** Calendar events, habit sessions and earlier blocks are all busy
+  time; a new block never overlaps them. If nothing fits, the API says so (`409`, or the plan's
+  *Doesn't fit* list) instead of overbooking.
+- A block lasts the task's planned duration, or the default duration from Settings.
+- **Schedule** (in a task's editor) places one block before the task's deadline, within 14
+  days; an overdue task can still be scheduled by hand. A task has at most one upcoming block.
+- **Plan into free time** (Tasks page) takes open tasks due within the chosen period or with a
+  duration, in Next Action order, and previews the blocks before creating them. Overdue tasks
+  are listed, not rescheduled: missed work is never pushed forward automatically.
+- Blocks are stored as UTC instants and the API returns UTC. Each block carries its own pending
+  Google Calendar change (`sync_op`), so nothing is lost while the calendar is unavailable;
+  until Google Calendar is connected every Ethos block reads *not synced*. A block Google never
+  saw is deleted outright; one it has seen is kept until the deletion syncs.
+- A task in Trash hides its blocks and frees their time; purging the task deletes them.
 
 ### Shortcut capture
 
