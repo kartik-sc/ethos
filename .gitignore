@@ -31,3 +31,4 @@ Thumbs.db
 # Playwright MCP artefacts
 .playwright-mcp/
 data/
+backups/
