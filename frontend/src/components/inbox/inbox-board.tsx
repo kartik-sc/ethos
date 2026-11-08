@@ -231,6 +231,7 @@ function OpenItem({ item }: { item: InboxItem }) {
             <span className={cn("shrink-0 font-mono text-[0.6875rem]", ageStyle[tone])}>
               {tone !== "fresh" && <span aria-hidden="true">● </span>}
               {formatRelativeSeconds(new Date(item.created_at), now)}
+              {item.source === "shortcut" && <span className="text-faint"> · shortcut</span>}
               {tone !== "fresh" && <span className="sr-only"> — waiting a while</span>}
             </span>
           )}

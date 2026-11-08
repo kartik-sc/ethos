@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { PageHeader } from "@/components/page-header";
 import { ArchiveSetting } from "@/components/settings/archive-setting";
+import { CaptureTokensSetting } from "@/components/settings/capture-tokens-setting";
 import { QuotesSetting } from "@/components/settings/quotes-setting";
 import { ThemeSetting } from "@/components/settings/theme-setting";
 import { DEFAULT_TIMEZONE } from "@/lib/time";
@@ -70,6 +71,13 @@ export default function SettingsPage() {
           Home
         </h2>
         <QuotesSetting />
+      </section>
+
+      <section id="capture" aria-labelledby="capture-heading" className="scroll-mt-8">
+        <h2 id="capture-heading" className="micro-label">
+          Capture
+        </h2>
+        <CaptureTokensSetting />
       </section>
 
       <section aria-labelledby="time-heading">
