@@ -1,3 +1,4 @@
+import logging
 import re
 from collections.abc import Sequence
 from datetime import date, datetime
@@ -47,6 +48,8 @@ ACTIONS = {
 SIMILAR = 0.88
 SIMILAR_SAME_DAY = 0.75
 DUPLICATE_LIMIT = 3
+
+logger = logging.getLogger("ethos.commands")
 
 
 class CommandRejectedError(Exception):
@@ -172,7 +175,11 @@ def _fields(parsed: Parsed, project: Project | None, habit: Habit | None) -> lis
 def _parse(text: str, today: date, interpreter: Interpreter) -> Parsed:
     parsed = parse(text, today)
     if parsed.kind == "capture" and not text.lstrip().startswith("/"):
-        return interpreter.interpret(text, today) or parsed
+        try:
+            return interpreter.interpret(text, today) or parsed
+        except Exception:
+            # A provider outage must never lose the text: it stays a plain Inbox capture.
+            logger.exception("interpreter failed; keeping the text as a capture")
     return parsed
 
 

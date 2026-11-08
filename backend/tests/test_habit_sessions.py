@@ -231,3 +231,93 @@ def test_releasing_future_sessions_rebooks_them_at_the_same_local_time(
     [(start, _, _)] = sessions(session, run.id)
     local = start.astimezone(ZoneInfo("Europe/London"))
     assert (local.date(), local.time()) == (MONDAY, time(7, 0))
+
+
+def test_concurrent_refreshes_never_double_book(client: TestClient, session: Session) -> None:
+    import threading
+
+    from app.core.db import get_sessionmaker
+
+    leetcode = habit(session, "LeetCode", protected=True, session_minutes=120)
+    gym = habit(session, "Gym", cadence="weekly", times_per_week=3, session_minutes=60)
+    barrier = threading.Barrier(4)
+    errors: list[BaseException] = []
+
+    def worker() -> None:
+        try:
+            with get_sessionmaker()() as own:
+                barrier.wait()
+                habit_sessions.refresh(own, context(at(MONDAY, 7)), MONDAY + timedelta(days=1))
+        except BaseException as error:  # pragma: no cover - surfaced below
+            errors.append(error)
+
+    threads = [threading.Thread(target=worker) for _ in range(4)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert errors == []
+    assert len(sessions(session, leetcode.id)) == 2, "today and tomorrow, once each"
+    assert len(sessions(session, gym.id)) == 3
+
+
+def test_recovery_is_retried_when_time_frees_up_later(client: TestClient, session: Session) -> None:
+    leetcode = habit(session, "LeetCode", protected=True, session_minutes=120, session_time="09:00")
+    habit_sessions.refresh(session, context(at(MONDAY, 8)))
+    event(session, at(MONDAY, 11), at(MONDAY, 22))
+    first = habit_sessions.refresh(session, context(at(MONDAY, 11, 5)))
+    assert first.recovered == 0 and len(first.unbooked) == 1
+
+    blocker = session.scalars(select(CalendarBlock).where(CalendarBlock.kind == BlockKind.EVENT))
+    blocker.one().ends_at = at(MONDAY, 15)
+    session.commit()
+    second = habit_sessions.refresh(session, context(at(MONDAY, 12)))
+
+    assert second.recovered == 1
+    assert sessions(session, leetcode.id)[-1][:2] == (at(MONDAY, 15), at(MONDAY, 17))
+    third = habit_sessions.refresh(session, context(at(MONDAY, 12, 30)))
+    assert third.recovered == 0, "one recovery at a time"
+
+
+def test_missed_recovery_from_yesterday_is_never_carried_over(
+    client: TestClient, session: Session
+) -> None:
+    leetcode = habit(session, "LeetCode", protected=True, session_minutes=120, session_time="09:00")
+    habit_sessions.refresh(session, context(at(MONDAY, 8)))
+    tuesday = MONDAY + timedelta(days=1)
+
+    report = habit_sessions.refresh(session, context(at(tuesday, 6)))
+
+    assert report.missed == 1 and report.recovered == 0
+    days = [(start.date(), status) for start, _, status in sessions(session, leetcode.id)]
+    assert days == [(MONDAY, MISSED), (tuesday, SCHEDULED)]
+    assert days.count((tuesday, SCHEDULED)) == 1
+
+
+def test_weekly_target_met_early_releases_later_sessions(
+    client: TestClient, session: Session
+) -> None:
+    gym = habit(session, "Gym", cadence="weekly", times_per_week=2, session_minutes=60)
+    habit_sessions.refresh(session, context(at(MONDAY, 7)))
+    assert len(sessions(session, gym.id)) == 2
+    tuesday = MONDAY + timedelta(days=1)
+    log(session, gym.id, MONDAY)
+    log(session, gym.id, tuesday)
+
+    habit_sessions.refresh(session, context(at(tuesday, 20)))
+
+    statuses = [status for *_, status in sessions(session, gym.id)]
+    assert statuses == [DONE], "the later session gave its time back"
+
+
+def test_worker_jobs_survive_unexpected_errors(monkeypatch: Any, session: Session) -> None:
+    from app.worker import main as worker
+
+    def explode(*_args: Any, **_kwargs: Any) -> None:
+        raise ValueError("boom")
+
+    monkeypatch.setattr(worker.habit_sessions, "refresh", explode)
+    monkeypatch.setattr(worker, "purge_expired", explode)
+    worker.refresh_habit_sessions()
+    worker.purge_trash()

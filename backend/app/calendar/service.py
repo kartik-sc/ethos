@@ -16,6 +16,15 @@ from app.preferences.models import Preferences
 from app.tasks.models import Task, TaskStatus
 from app.tasks.service import rank_key
 
+# Any constant works; it only has to be the same everywhere bookings are made.
+SCHEDULING_LOCK = 0x4554_484F
+
+
+def lock_schedule(session: Session) -> None:
+    """Serialises everything that books time (worker refresh, planning, scheduling) until the
+    transaction ends, so two of them can never both see a slot as free and both take it."""
+    session.execute(select(func.pg_advisory_xact_lock(SCHEDULING_LOCK)))
+
 
 class BlockNotFoundError(Exception):
     pass
@@ -154,6 +163,7 @@ def schedule_task(
     An overdue task can still be scheduled when the owner asks; it is just no longer bound
     by a deadline that has passed.
     """
+    lock_schedule(session)
     existing = _upcoming_block(session, task.id, context.now)
     if existing is not None:
         raise AlreadyScheduledError(existing)
@@ -194,6 +204,8 @@ def _plan_candidates(session: Session, context: Context, horizon_days: int) -> l
 
 
 def plan_tasks(session: Session, context: Context, horizon_days: int, *, apply: bool) -> PlanResult:
+    if apply:
+        lock_schedule(session)
     tasks = {str(task.id): task for task in _plan_candidates(session, context, horizon_days)}
     today = context.today
     requests = [

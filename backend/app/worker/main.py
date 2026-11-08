@@ -4,8 +4,6 @@ import threading
 from datetime import UTC, datetime, timedelta
 from types import FrameType
 
-from sqlalchemy.exc import SQLAlchemyError
-
 from app.calendar import habit_sessions
 from app.calendar.service import Context
 from app.core.config import get_settings
@@ -18,6 +16,10 @@ from app.trash.service import purge_expired
 
 logger = logging.getLogger("ethos.worker")
 
+# Every job catches everything it raises: one failing job is logged and retried on the next
+# loop, and never stops the heartbeat or the other jobs. Jobs are idempotent, so a retry, a
+# restart or a second worker cannot book or delete anything twice.
+
 PURGE_EVERY = timedelta(hours=1)
 
 
@@ -25,7 +27,7 @@ def beat(started_at: datetime) -> None:
     try:
         with get_sessionmaker()() as session:
             record_heartbeat(session, WORKER_SERVICE, started_at, datetime.now(UTC))
-    except SQLAlchemyError:
+    except Exception:
         logger.exception("heartbeat write failed")
 
 
@@ -38,7 +40,7 @@ def purge_trash() -> None:
             logger.info("trash purged", extra=vars(purged))
         if swept:
             logger.info("orphaned file blobs removed", extra={"count": swept})
-    except (SQLAlchemyError, OSError):
+    except Exception:
         logger.exception("trash purge failed")
 
 
@@ -54,7 +56,7 @@ def refresh_habit_sessions() -> None:
         }
         if changes:
             logger.info("habit sessions refreshed", extra=changes)
-    except SQLAlchemyError:
+    except Exception:
         logger.exception("habit session refresh failed")
 
 

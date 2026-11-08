@@ -126,3 +126,26 @@ def test_habit_logging(client: TestClient) -> None:
 def test_search_returns_the_query(client: TestClient) -> None:
     body = run(client, "/search dbms notes").json()
     assert (body["kind"], body["query"]) == ("search", "dbms notes")
+
+
+def test_a_failing_interpreter_never_loses_the_text(client: TestClient) -> None:
+    from app.commands.interpreter import get_interpreter
+    from app.main import app
+
+    class Down:
+        def interpret(self, text: str, today: object) -> None:
+            raise TimeoutError("provider unavailable")
+
+    app.dependency_overrides[get_interpreter] = Down
+    try:
+        response = run(client, "remind me to call the bank")
+        slash = run(client, "/task Pay rent")
+    finally:
+        app.dependency_overrides.pop(get_interpreter, None)
+
+    assert response.status_code == 200
+    assert response.json()["kind"] == "capture"
+    assert [item["content"] for item in client.get("/api/v1/inbox").json()] == [
+        "remind me to call the bank"
+    ]
+    assert slash.json()["kind"] == "task", "slash commands never touch the interpreter"

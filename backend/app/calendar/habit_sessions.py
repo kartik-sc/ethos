@@ -1,7 +1,8 @@
 """Booking habit sessions, settling them once they pass, and the two missed-session rules.
 
 - A protected daily habit (the two-hour LeetCode session) that is missed gets another slot
-  later the same day, at full length. If none is free it stays missed. Never tomorrow.
+  later the same day, at full length, retried until one frees up or the day ends. If none is
+  free it stays missed and is reported. Never tomorrow.
 - A weekly habit that falls behind spreads its remaining sessions over the rest of the week,
   around everything already booked. What cannot fit is reported, not squeezed in.
 - Every other missed session simply stays missed.
@@ -18,7 +19,7 @@ from sqlalchemy.orm import Session
 
 from app.calendar import slots
 from app.calendar.models import BlockKind, BlockStatus, CalendarBlock, SyncOp
-from app.calendar.service import Context, busy, local_range
+from app.calendar.service import Context, busy, local_range, lock_schedule
 from app.habits.models import Cadence, Habit, HabitLog
 from app.habits.rules import is_met, is_scheduled, week_start
 
@@ -89,6 +90,16 @@ def _book(
     return block
 
 
+def _release(session: Session, block: CalendarBlock) -> None:
+    """Gives a session's time back: deleted if Google never saw it, else the deletion is queued."""
+    if block.external_id is None:
+        session.delete(block)
+    else:
+        block.sync_op = SyncOp.DELETE
+        block.status = BlockStatus.CANCELLED
+    session.flush()
+
+
 def _slot_on(session: Session, habit: Habit, day: date, context: Context) -> slots.Interval | None:
     """The preferred time if it is free and still ahead, else the first free slot that day."""
     minutes = habit.session_minutes or 0
@@ -105,7 +116,7 @@ def _slot_on(session: Session, habit: Habit, day: date, context: Context) -> slo
 
 def settle(session: Session, context: Context, report: Report) -> None:
     """Marks habit sessions done when the day's entry meets the habit, and missed once they
-    end without it. A missed protected daily session gets one same-day recovery attempt."""
+    end without it."""
     since = context.now - timedelta(days=7)
     _, end_of_today = local_range(context.today, context.today, context.timezone)
     blocks = session.scalars(
@@ -126,21 +137,36 @@ def settle(session: Session, context: Context, report: Report) -> None:
         if day in _met_days(session, habit, day, day):
             block.status = BlockStatus.DONE
             report.done += 1
-            continue
-        if block.status is BlockStatus.MISSED or block.ends_at > context.now:
-            continue
-        block.status = BlockStatus.MISSED
-        report.missed += 1
-        session.flush()
-        if habit.protected and habit.cadence is Cadence.DAILY and day == context.today:
-            slot = _slot_on(session, habit, day, context)
-            if slot is None:
-                report.unbooked.append(
-                    Unbooked(str(habit.id), habit.title, day, habit.session_minutes or 0)
-                )
-            else:
-                _book(session, habit, slot, recovers=block)
-                report.recovered += 1
+        elif block.status is BlockStatus.SCHEDULED and block.ends_at <= context.now:
+            block.status = BlockStatus.MISSED
+            report.missed += 1
+    session.flush()
+
+
+def _recover(session: Session, habit: Habit, context: Context, report: Report) -> None:
+    """A protected daily habit whose session today was missed gets another full-length slot
+    later today. Tried on every refresh, so time freed later in the day is still used; never
+    tomorrow."""
+    today = context.today
+    if not is_scheduled(habit, today) or today in _met_days(session, habit, today, today):
+        return
+    start, end = local_range(today, today, context.timezone)
+    blocks = [
+        block
+        for block in _habit_blocks(session, habit, start, end)
+        if block.status is not BlockStatus.CANCELLED
+    ]
+    missed = [block for block in blocks if block.status is BlockStatus.MISSED]
+    if not missed or len(missed) < len(blocks):
+        return  # nothing missed yet, or a session is still booked or done
+    slot = _slot_on(session, habit, today, context)
+    if slot is None:
+        report.unbooked.append(
+            Unbooked(str(habit.id), habit.title, today, habit.session_minutes or 0)
+        )
+        return
+    _book(session, habit, slot, recovers=max(missed, key=lambda block: block.starts_at))
+    report.recovered += 1
 
 
 def _spread(days: Sequence[date], count: int) -> list[date]:
@@ -189,7 +215,18 @@ def _book_weekly(session: Session, habit: Habit, context: Context, report: Repor
         if block.status is BlockStatus.SCHEDULED and block.ends_at > context.now
     ]
     owed = (habit.times_per_week or 0) - len(met) - len(upcoming)
-    if owed <= 0:
+    if owed < 0:
+        # The target is already in reach: later sessions that haven't started give their time
+        # back instead of sitting in the calendar as unwanted blocks.
+        later = sorted(
+            (block for block in upcoming if block.starts_at > context.now),
+            key=lambda block: block.starts_at,
+            reverse=True,
+        )
+        for block in later[:-owed]:
+            _release(session, block)
+        return
+    if owed == 0:
         return
     used = met | {_local_day(block.starts_at, context.timezone) for block in blocks}
     open_days = [today + timedelta(days=n) for n in range((sunday - today).days + 1)]
@@ -222,11 +259,14 @@ def _book_weekly(session: Session, habit: Habit, context: Context, report: Repor
 
 def refresh(session: Session, context: Context, through: date | None = None) -> Report:
     """Settles past sessions, then books what is due from today through `through`."""
+    lock_schedule(session)
     report = Report()
     settle(session, context, report)
     last = through or context.today
     for habit in _scheduled_habits(session):
         if habit.cadence is Cadence.DAILY:
+            if habit.protected:
+                _recover(session, habit, context, report)
             _book_daily(session, habit, context, last, report)
         else:
             _book_weekly(session, habit, context, report)
@@ -267,12 +307,9 @@ def release_future(session: Session, now: datetime, habit_id: uuid.UUID | None =
     )
     if habit_id is not None:
         query = query.where(CalendarBlock.habit_id == habit_id)
+    lock_schedule(session)
     blocks = session.scalars(query).all()
     for block in blocks:
-        if block.external_id is None:
-            session.delete(block)
-        else:
-            block.sync_op = SyncOp.DELETE
-            block.status = BlockStatus.CANCELLED
+        _release(session, block)
     session.commit()
     return len(blocks)
