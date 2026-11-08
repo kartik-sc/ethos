@@ -3,8 +3,10 @@ from datetime import UTC, datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.calendar.service import release_task_blocks
 from app.core.db import get_session
 from app.goals.service import GoalUnavailableError
 from app.projects import service
@@ -17,6 +19,7 @@ from app.projects.schemas import (
     ProjectView,
     TaskCounts,
 )
+from app.tasks.models import Task
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -78,7 +81,10 @@ def update_project(
 
 @router.delete("/{project_id}", responses=NOT_FOUND)
 def trash_project(project_id: uuid.UUID, session: SessionDep) -> ProjectTrashed:
-    moved = service.trash_project(session, _load(session, project_id), datetime.now(UTC))
+    now = datetime.now(UTC)
+    moved = service.trash_project(session, _load(session, project_id), now)
+    task_ids = session.scalars(select(Task.id).where(Task.project_id == project_id)).all()
+    release_task_blocks(session, task_ids, now)
     return ProjectTrashed(tasks_moved=moved)
 
 

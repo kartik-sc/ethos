@@ -7,12 +7,13 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from app.calendar.service import release_task_blocks
 from app.core.db import get_session
 from app.goals.service import GoalUnavailableError
 from app.preferences.deps import TimezoneDep
 from app.preferences.service import get_preferences
 from app.tasks import service
-from app.tasks.models import Task
+from app.tasks.models import Task, TaskStatus
 from app.tasks.schemas import (
     NextAction,
     NextActionOverrideCreate,
@@ -90,14 +91,19 @@ def override_next_action(data: NextActionOverrideCreate, session: SessionDep) ->
 @router.patch("/{task_id}", responses=NOT_FOUND)
 def update_task(task_id: uuid.UUID, changes: TaskUpdate, session: SessionDep) -> TaskRead:
     task = _load(session, task_id)
+    now = datetime.now(UTC)
     with _links_must_be_live(status.HTTP_422_UNPROCESSABLE_CONTENT):
-        service.update_task(session, task, changes, datetime.now(UTC))
+        service.update_task(session, task, changes, now)
+    if task.status is not TaskStatus.OPEN:
+        release_task_blocks(session, [task.id], now)
     return TaskRead.model_validate(task)
 
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT, responses=NOT_FOUND)
 def trash_task(task_id: uuid.UUID, session: SessionDep) -> None:
-    service.trash_task(session, _load(session, task_id), datetime.now(UTC))
+    now = datetime.now(UTC)
+    service.trash_task(session, _load(session, task_id), now)
+    release_task_blocks(session, [task_id], now)
 
 
 @router.post(

@@ -210,3 +210,38 @@ def test_planning_books_habit_sessions_first(client: TestClient, session: Sessio
     assert result["placed"][0]["starts_at"] == at(MONDAY, 11)
     kinds = [(b["kind"], b["fixed"]) for b in client.get(f"{CAL}/blocks").json()]
     assert kinds == [("habit", True)]
+
+
+def test_restoring_a_task_never_double_books_its_old_time(client: TestClient) -> None:
+    first = task(client, "First", planned_minutes=60)
+    client.post(f"{CAL}/tasks/{first['id']}/schedule")
+    client.delete(f"/api/v1/tasks/{first['id']}")
+    second = task(client, "Second", planned_minutes=60)
+    taken = client.post(f"{CAL}/tasks/{second['id']}/schedule").json()
+    assert taken["starts_at"] == at(MONDAY, 9), "the trashed task's time was freed"
+
+    client.post(f"/api/v1/tasks/{first['id']}/restore")
+
+    blocks = client.get(f"{CAL}/blocks").json()
+    assert [b["title"] for b in blocks] == ["Second"]
+
+
+def test_closing_a_task_frees_its_upcoming_blocks(client: TestClient) -> None:
+    created = task(client, "Finish early", planned_minutes=60)
+    client.post(f"{CAL}/tasks/{created['id']}/schedule")
+
+    client.patch(f"/api/v1/tasks/{created['id']}", json={"status": "done"})
+
+    assert client.get(f"{CAL}/blocks").json() == []
+    assert client.get(f"{CAL}/status").json()["pending"] == 0
+
+
+def test_trashing_a_project_frees_its_tasks_blocks(client: TestClient) -> None:
+    project = client.post("/api/v1/projects", json={"title": "Thesis"}).json()
+    created = task(client, "Chapter 1", planned_minutes=60, project_id=project["id"])
+    client.post(f"{CAL}/tasks/{created['id']}/schedule")
+
+    client.delete(f"/api/v1/projects/{project['id']}")
+    client.post(f"/api/v1/projects/{project['id']}/restore")
+
+    assert client.get(f"{CAL}/blocks").json() == []

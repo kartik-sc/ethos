@@ -254,6 +254,37 @@ class FixedBlockError(Exception):
     pass
 
 
+def release(session: Session, block: CalendarBlock) -> None:
+    """Gives a block's time back: deleted if Google never saw it, else hidden and its deletion
+    queued."""
+    if block.external_id is None:
+        session.delete(block)
+    else:
+        block.sync_op = SyncOp.DELETE
+        block.status = BlockStatus.CANCELLED
+    session.flush()
+
+
+def release_task_blocks(session: Session, task_ids: Sequence[uuid.UUID], now: datetime) -> int:
+    """Frees the upcoming blocks of tasks that were closed or trashed. Past blocks stay as
+    history. Without this, restoring a task would bring its old blocks back on top of work
+    booked into the freed time since."""
+    if not task_ids:
+        return 0
+    lock_schedule(session)
+    blocks = session.scalars(
+        select(CalendarBlock).where(
+            CalendarBlock.task_id.in_(task_ids),
+            CalendarBlock.status == BlockStatus.SCHEDULED,
+            CalendarBlock.starts_at > now,
+        )
+    ).all()
+    for block in blocks:
+        release(session, block)
+    session.commit()
+    return len(blocks)
+
+
 def remove_block(session: Session, block: CalendarBlock) -> None:
     """Fixed blocks stay. A removed habit session is kept as cancelled so it is not booked
     again that day. Otherwise a block Google never saw is deleted, or its deletion queued."""

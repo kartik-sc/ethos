@@ -114,7 +114,9 @@ def update_habit(
 
 @router.delete("/{habit_id}", status_code=status.HTTP_204_NO_CONTENT, responses=NOT_FOUND)
 def trash_habit(habit_id: uuid.UUID, session: SessionDep) -> None:
-    service.trash_habit(session, _load(session, habit_id), datetime.now(UTC))
+    now = datetime.now(UTC)
+    service.trash_habit(session, _load(session, habit_id), now)
+    habit_sessions.release_future(session, now, habit_id)
 
 
 @router.post("/{habit_id}/restore", responses=NOT_FOUND)

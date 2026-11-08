@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 
 from app.calendar import slots
 from app.calendar.models import BlockKind, BlockStatus, CalendarBlock, SyncOp
-from app.calendar.service import Context, busy, local_range, lock_schedule
+from app.calendar.service import Context, busy, local_range, lock_schedule, release
 from app.habits.models import Cadence, Habit, HabitLog
 from app.habits.rules import is_met, is_scheduled, week_start
 
@@ -88,16 +88,6 @@ def _book(
     session.add(block)
     session.flush()
     return block
-
-
-def _release(session: Session, block: CalendarBlock) -> None:
-    """Gives a session's time back: deleted if Google never saw it, else the deletion is queued."""
-    if block.external_id is None:
-        session.delete(block)
-    else:
-        block.sync_op = SyncOp.DELETE
-        block.status = BlockStatus.CANCELLED
-    session.flush()
 
 
 def _slot_on(session: Session, habit: Habit, day: date, context: Context) -> slots.Interval | None:
@@ -224,7 +214,7 @@ def _book_weekly(session: Session, habit: Habit, context: Context, report: Repor
             reverse=True,
         )
         for block in later[:-owed]:
-            _release(session, block)
+            release(session, block)
         return
     if owed == 0:
         return
@@ -310,6 +300,6 @@ def release_future(session: Session, now: datetime, habit_id: uuid.UUID | None =
     lock_schedule(session)
     blocks = session.scalars(query).all()
     for block in blocks:
-        _release(session, block)
+        release(session, block)
     session.commit()
     return len(blocks)
