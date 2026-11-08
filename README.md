@@ -404,6 +404,10 @@ until local midnight or until the chosen task is closed, and every override is s
 > Not yet: the API has no authentication (Google sign-in is the next owner-dependent slice), and
 > Trash is not purged after 30 days yet. Neither matters while Ethos only runs locally.
 
+## Operations
+
+Backups, the restore drill, rollback and recovery are in [`ops/README.md`](ops/README.md).
+
 ## Deployment
 
 Not wired up yet; it comes in the next Phase 0 slice and needs the VPS and domain (see the

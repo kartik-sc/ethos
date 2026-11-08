@@ -69,7 +69,7 @@ This is the short execution checklist. The full product and technical requiremen
 - [x] Weekly/monthly analytics.
 - [ ] Habit consistency and selected quantitative tracking.
 - [x] File storage on persistent VPS volume, 25 MB limit and overwrite confirmation.
-- [ ] Project-associated file links and backup inclusion. *(links done; backups land with Phase 5)*
+- [x] Project-associated file links and backup inclusion.
 - [x] Concurrent note edit conflict detection/merge.
 - [x] PWA installability and purpose-built mobile screens. *(phone notifications wait on a delivery channel)*
 
@@ -77,13 +77,13 @@ This is the short execution checklist. The full product and technical requiremen
 
 ## Phase 5 — Production hardening
 
-- [ ] Daily local and encrypted off-server backups.
-- [ ] At least seven-day backup retention.
-- [ ] Automated backup integrity check and failure alert.
-- [ ] Restore drill for PostgreSQL and uploaded files.
+- [ ] Daily local and encrypted off-server backups. *(`ops/backup.sh` done and tested locally; off-server target and VPS cron wait on procurement)*
+- [x] At least seven-day backup retention.
+- [ ] Automated backup integrity check and failure alert. *(integrity checks done; alert needs a channel)*
+- [x] Restore drill for PostgreSQL and uploaded files. *(`ops/restore-drill.sh`)*
 - [ ] Health monitoring: host, database, API, worker, containers and uptime.
-- [ ] Manual VPS recovery runbook.
-- [ ] Manual application rollback runbook.
+- [x] Manual VPS recovery runbook.
+- [x] Manual application rollback runbook.
 - [ ] Verify OAuth token encryption and encryption-key recovery procedure.
 - [ ] Review firewall, SSH, HTTPS, uploads, secrets and log redaction.
 - [ ] Confirm archive, Trash and project cascade behaviour.
