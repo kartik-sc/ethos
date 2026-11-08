@@ -142,10 +142,10 @@ export function CaptureTokensSetting() {
   return (
     <div className="flex flex-col gap-4 pt-3">
       <p className="text-sm text-muted-foreground">
-        A token lets a Shortcut add captures without signing in. It can do nothing else, and you can
-        revoke it at any time. Clear commands such as{" "}
-        <code className="font-mono text-xs">/task … by fri</code> run; everything else lands in the
-        Inbox.
+        A token lets an iPhone Shortcut add captures, or the browser clipper add notes, without
+        signing in. It can do nothing else, and you can revoke it at any time. Shortcut commands
+        such as <code className="font-mono text-xs">/task … by fri</code> run; everything else lands
+        in the Inbox.
       </p>
 
       {created ? (
