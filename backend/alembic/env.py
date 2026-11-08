@@ -2,6 +2,7 @@ from alembic import context
 from sqlalchemy import create_engine, pool
 
 # Register every table on Base.metadata.
+import app.files.models
 import app.goals.models
 import app.habits.models
 import app.inbox.models

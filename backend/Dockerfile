@@ -11,7 +11,7 @@ COPY alembic ./alembic
 COPY app ./app
 
 FROM python:3.13-slim
-RUN useradd --system --uid 10001 --no-create-home ethos
+RUN useradd --system --uid 10001 --no-create-home ethos     && mkdir -p /data/files && chown ethos /data/files
 WORKDIR /app
 COPY --from=build /app /app
 ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1

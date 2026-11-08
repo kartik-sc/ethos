@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -22,6 +23,7 @@ class Settings(BaseSettings):
     database_url: SecretStr
     default_timezone: str = "Asia/Kolkata"
     worker_heartbeat_seconds: int = Field(default=30, ge=5, le=300)
+    file_storage_dir: Path = Path("data/files")
 
     @field_validator("database_url")
     @classmethod

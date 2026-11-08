@@ -5,6 +5,7 @@ from datetime import datetime
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
+from app.files.models import FileAsset
 from app.goals.service import ensure_live_goal
 from app.projects.models import Project
 from app.projects.schemas import ProjectCreate, ProjectUpdate, ProjectView, TaskCounts
@@ -79,7 +80,7 @@ def update_project(session: Session, project: Project, changes: ProjectUpdate) -
 
 
 def trash_project(session: Session, project: Project, now: datetime) -> int:
-    """Moves the project and its live tasks to Trash together, sharing one timestamp."""
+    """Moves the project, its live tasks and files to Trash together, sharing one timestamp."""
     project.deleted_at = now
     moved = session.scalars(
         update(Task)
@@ -87,17 +88,23 @@ def trash_project(session: Session, project: Project, now: datetime) -> int:
         .values(deleted_at=now)
         .returning(Task.id)
     ).all()
+    session.execute(
+        update(FileAsset)
+        .where(FileAsset.project_id == project.id, FileAsset.deleted_at.is_(None))
+        .values(deleted_at=now)
+    )
     session.commit()
     return len(moved)
 
 
 def restore_project(session: Session, project: Project) -> Project:
-    """Brings back the tasks trashed with the project; tasks trashed on their own stay there."""
-    session.execute(
-        update(Task)
-        .where(Task.project_id == project.id, Task.deleted_at == project.deleted_at)
-        .values(deleted_at=None)
-    )
+    """Brings back what was trashed with the project; records trashed on their own stay there."""
+    for model in (Task, FileAsset):
+        session.execute(
+            update(model)
+            .where(model.project_id == project.id, model.deleted_at == project.deleted_at)
+            .values(deleted_at=None)
+        )
     project.deleted_at = None
     session.commit()
     return project

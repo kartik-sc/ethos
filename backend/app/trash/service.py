@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
+from app.files.models import FileAsset
 from app.goals.models import Goal
 from app.habits.models import Habit
 from app.notes.models import Note
@@ -20,6 +21,7 @@ class Purged:
     goals: int
     habits: int
     notes: int
+    files: int
 
 
 def purge_expired(session: Session, now: datetime) -> Purged:
@@ -28,11 +30,13 @@ def purge_expired(session: Session, now: datetime) -> Purged:
     Projects cascade to their tasks and habits to their logs in the database. Goals only
     unlink: their projects, tasks and habits are independent records. Notes take their
     versions and outgoing links; links pointing at a purged note simply stop resolving.
+    File rows go here; their blobs are removed by the worker's orphan sweep.
     """
     cutoff = now - RETENTION
     counts = {}
     models = (
         ("tasks", Task),
+        ("files", FileAsset),
         ("projects", Project),
         ("goals", Goal),
         ("habits", Habit),

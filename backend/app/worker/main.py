@@ -9,6 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.core.config import get_settings
 from app.core.db import get_sessionmaker
 from app.core.logging import configure_logging
+from app.files.service import sweep_orphans
 from app.system.service import WORKER_SERVICE, record_heartbeat
 from app.trash.service import purge_expired
 
@@ -29,9 +30,12 @@ def purge_trash() -> None:
     try:
         with get_sessionmaker()() as session:
             purged = purge_expired(session, datetime.now(UTC))
+            swept = sweep_orphans(session, get_settings().file_storage_dir)
         if any(vars(purged).values()):
             logger.info("trash purged", extra=vars(purged))
-    except SQLAlchemyError:
+        if swept:
+            logger.info("orphaned file blobs removed", extra={"count": swept})
+    except (SQLAlchemyError, OSError):
         logger.exception("trash purge failed")
 
 
