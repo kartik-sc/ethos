@@ -7,6 +7,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    SmallInteger,
     String,
     Text,
     func,
@@ -66,6 +67,8 @@ class CalendarBlock(Base):
     external_id: Mapped[str | None] = mapped_column(String(255), unique=True)
     sync_op: Mapped[SyncOp | None] = mapped_column(string_enum(SyncOp, "block_sync_op"))
     sync_error: Mapped[str | None] = mapped_column(Text)
+    # Rejected attempts at the pending change; the block reads as failed once it hits the limit.
+    sync_attempts: Mapped[int] = mapped_column(SmallInteger, default=0, server_default="0")
     synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(

@@ -4,7 +4,7 @@ import threading
 from datetime import UTC, datetime, timedelta
 from types import FrameType
 
-from app.calendar import habit_sessions
+from app.calendar import habit_sessions, sync
 from app.calendar.service import Context
 from app.core.config import get_settings
 from app.core.db import get_sessionmaker
@@ -60,6 +60,20 @@ def refresh_habit_sessions() -> None:
         logger.exception("habit session refresh failed")
 
 
+def sync_calendar() -> None:
+    """Pushes pending block changes once a calendar provider is connected; until then they wait."""
+    provider = sync.get_provider()
+    if provider is None:
+        return
+    try:
+        with get_sessionmaker()() as session:
+            report = sync.push_pending(session, provider, datetime.now(UTC))
+        if report.pushed or report.rejected or report.deferred:
+            logger.info("calendar sync", extra=vars(report))
+    except Exception:
+        logger.exception("calendar sync failed")
+
+
 def run(stop: threading.Event) -> None:
     interval = get_settings().worker_heartbeat_seconds
     started_at = datetime.now(UTC)
@@ -68,6 +82,7 @@ def run(stop: threading.Event) -> None:
     while not stop.is_set():
         beat(started_at)
         refresh_habit_sessions()
+        sync_calendar()
         if last_purge is None or datetime.now(UTC) - last_purge >= PURGE_EVERY:
             purge_trash()
             last_purge = datetime.now(UTC)

@@ -65,10 +65,13 @@ class Context:
         )
 
 
+MAX_SYNC_ATTEMPTS = 5
+
+
 def sync_state(block: CalendarBlock) -> SyncState:
-    if block.sync_error:
-        return "failed"
-    return "pending" if block.sync_op is not None else "synced"
+    if block.sync_op is None:
+        return "synced"
+    return "failed" if block.sync_attempts >= MAX_SYNC_ATTEMPTS else "pending"
 
 
 def read(block: CalendarBlock) -> BlockRead:
@@ -262,6 +265,8 @@ def release(session: Session, block: CalendarBlock) -> None:
     else:
         block.sync_op = SyncOp.DELETE
         block.status = BlockStatus.CANCELLED
+        block.sync_error = None
+        block.sync_attempts = 0
     session.flush()
 
 
@@ -293,9 +298,12 @@ def remove_block(session: Session, block: CalendarBlock) -> None:
     if block.kind is BlockKind.HABIT:
         block.status = BlockStatus.CANCELLED
         block.sync_op = None if block.external_id is None else SyncOp.DELETE
+        block.sync_error = None
+        block.sync_attempts = 0
     elif block.external_id is None:
         session.delete(block)
     else:
         block.sync_op = SyncOp.DELETE
         block.sync_error = None
+        block.sync_attempts = 0
     session.commit()

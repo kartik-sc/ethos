@@ -300,7 +300,17 @@ Inbox; `/` lists commands. Commands are parsed deterministically in the backend
   Google Calendar change (`sync_op`), so nothing is lost while the calendar is unavailable;
   until Google Calendar is connected every Ethos block reads *not synced*. A block Google never
   saw is deleted outright; one it has seen is kept until the deletion syncs.
-- A task in Trash hides its blocks and frees their time; purging the task deletes them.
+- Closing or trashing a task (or trashing its project or a habit) frees its upcoming blocks;
+  past blocks stay as history. Restoring it later never brings old blocks back over time that
+  was booked since.
+- Everything that books time takes one PostgreSQL advisory lock for its transaction, so the
+  worker, planning and scheduling can never both claim the same free slot.
+- **Calendar sync** (`app/calendar/sync.py`) pushes each pending change through a small
+  provider interface (`create`/`update`/`delete`). Creates use an id derived from the block, so
+  a crash between the provider call and the commit never creates a second event. An outage
+  leaves changes pending without using up attempts; a rejected change is retried up to five
+  times, then shows as *sync failed*. Until Google Calendar is connected, `get_provider()`
+  returns nothing and changes wait. The suite exercises all of this with an in-memory fake.
 
 ### Habit sessions
 
