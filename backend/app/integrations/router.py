@@ -1,6 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 from typing import Annotated
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
@@ -8,14 +9,18 @@ from sqlalchemy.orm import Session
 from app.commands.interpreter import Interpreter, get_interpreter
 from app.core.clock import local_today
 from app.core.db import get_session
-from app.integrations import service
+from app.integrations import clip, service
 from app.integrations.schemas import (
     CaptureRequest,
     CaptureResult,
+    ClipFolders,
+    ClipRequest,
+    ClipResult,
     TokenCreate,
     TokenCreated,
     TokenRead,
 )
+from app.notes.service import NotesError
 from app.preferences.deps import TimezoneDep
 
 router = APIRouter(tags=["integrations"])
@@ -74,3 +79,32 @@ def capture(
     201 means the capture is stored: either the command ran or the text is in the Inbox."""
     now = datetime.now(UTC)
     return service.capture(session, data.text, local_today(now, timezone), now, interpreter)
+
+
+@router.get(
+    "/clip/folders",
+    dependencies=[Depends(require_capture_token)],
+    responses={401: {"description": "Missing, unknown or revoked token"}},
+)
+def clip_folders(session: SessionDep) -> ClipFolders:
+    """Note folders for the clipper's destination picker, with the suggested one."""
+    return clip.folders(session)
+
+
+@router.post(
+    "/clip",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_capture_token)],
+    responses={
+        401: {"description": "Missing, unknown or revoked token"},
+        422: {"description": "Invalid clip or unknown folder"},
+    },
+)
+def create_clip(data: ClipRequest, session: SessionDep, timezone: TimezoneDep) -> ClipResult:
+    """Saves a web clip from the browser extension as a Markdown note."""
+    now = datetime.now(UTC)
+    try:
+        note, folder = clip.clip(session, data, now.astimezone(ZoneInfo(timezone)))
+    except NotesError as error:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, error.message) from None
+    return ClipResult(note_id=note.id, title=note.title, folder=folder)
