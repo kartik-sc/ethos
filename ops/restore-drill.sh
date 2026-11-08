@@ -40,6 +40,6 @@ for table in "${TABLES[@]}"; do
 done
 
 echo "unpacking files"
-tar -xzf "$SET/files.tar.gz" -C "$WORK"
+tar --force-local -xzf "$SET/files.tar.gz" -C "$WORK"
 echo "files restored: $(find "$WORK" -type f | wc -l)"
 echo "restore drill ok: $SET"

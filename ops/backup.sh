@@ -46,13 +46,13 @@ echo "archiving uploaded files"
 echo "verifying"
 "${COMPOSE[@]}" exec -T db pg_restore --list < "$SET/ethos.dump" > /dev/null \
   || fail "dump does not read back"
-tar -tzf "$SET/files.tar.gz" > /dev/null || fail "file archive does not read back"
+tar --force-local -tzf "$SET/files.tar.gz" > /dev/null || fail "file archive does not read back"
 [ -s "$SET/ethos.dump" ] || fail "dump is empty"
 (cd "$SET" && sha256sum ethos.dump files.tar.gz > SHA256SUMS)
 
 if [ -n "${BACKUP_AGE_RECIPIENT:-}" ]; then
   echo "encrypting off-server copy"
-  tar -C "$BACKUP_DIR" -cf - "$STAMP" | age -r "$BACKUP_AGE_RECIPIENT" > "$SET.tar.age" \
+  tar --force-local -C "$BACKUP_DIR" -cf - "$STAMP" | age -r "$BACKUP_AGE_RECIPIENT" > "$SET.tar.age" \
     || fail "encryption failed"
   if [ -n "${BACKUP_RCLONE_REMOTE:-}" ]; then
     rclone copy "$SET.tar.age" "$BACKUP_RCLONE_REMOTE" || fail "off-server copy failed"
