@@ -107,13 +107,15 @@ export function AgendaPanel() {
       className="rounded-xl border border-border bg-card/80"
     >
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
-        <h2 id="agenda-heading" className="micro-label">
+        <h2 id="agenda-heading" className="micro-label shrink-0">
           Today&apos;s agenda
         </h2>
         {status.data && !status.data.connected && (
-          <span className="font-mono text-[0.625rem] text-faint">
-            google calendar not connected
-            {status.data.pending > 0 && ` · ${status.data.pending} waiting to sync`}
+          <span className="text-right font-mono text-[0.625rem] text-faint">
+            <span className="hidden sm:inline">google </span>calendar not connected
+            {status.data.pending > 0 && (
+              <span className="hidden sm:inline"> · {status.data.pending} waiting to sync</span>
+            )}
           </span>
         )}
       </div>

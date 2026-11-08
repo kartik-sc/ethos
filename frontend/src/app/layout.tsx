@@ -20,6 +20,7 @@ export const metadata: Metadata = {
   title: { default: "Ethos", template: "%s · Ethos" },
   description: "Personal command centre",
   robots: { index: false, follow: false },
+  appleWebApp: { capable: true, title: "Ethos", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {
