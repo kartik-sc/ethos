@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCalendarBlocks, useCalendarStatus, useRemoveBlock } from "@/hooks/use-calendar";
 import { useNow } from "@/hooks/use-now";
 import { useTimezone } from "@/hooks/use-timezone";
-import { blockPhase, formatTimeRange } from "@/lib/calendar";
+import { blockPhase, durationLabel, formatTimeRange } from "@/lib/calendar";
 import type { CalendarBlock } from "@/lib/types/calendar";
 import { cn } from "@/lib/utils";
 
@@ -55,12 +55,18 @@ function AgendaRow({
         {formatTimeRange(block.starts_at, block.ends_at, timeZone)}
       </time>
       <span className={cn("min-w-0 flex-1 truncate text-sm", missed && "line-through")}>
-        {block.task_id ? (
-          <Link href="/tasks" className="outline-none hover:underline focus-visible:underline">
+        {block.task_id || block.habit_id ? (
+          <Link
+            href={block.task_id ? "/tasks" : "/habits"}
+            className="outline-none hover:underline focus-visible:underline"
+          >
             {block.title}
           </Link>
         ) : (
           block.title
+        )}
+        {block.recovers_id && (
+          <span className="ml-2 font-mono text-[0.625rem] text-primary">recovery</span>
         )}
       </span>
       <span className="hidden shrink-0 font-mono text-[0.625rem] text-faint sm:inline">
@@ -120,7 +126,7 @@ export function AgendaPanel() {
         <p role="alert" className="px-4 py-4 text-sm text-muted-foreground">
           The agenda couldn&apos;t load: {blocks.error.message}.
         </p>
-      ) : blocks.data.length === 0 ? (
+      ) : blocks.data.length === 0 && !status.data?.unbooked.length ? (
         <div className="flex items-center gap-3 px-4 py-4 text-sm text-muted-foreground">
           <CalendarClock aria-hidden="true" className="size-4 shrink-0 text-faint" />
           <p>
@@ -132,11 +138,25 @@ export function AgendaPanel() {
           </p>
         </div>
       ) : (
-        <ol className="py-1">
-          {blocks.data.map((block) => (
-            <AgendaRow key={block.id} block={block} now={now} timeZone={timeZone} />
-          ))}
-        </ol>
+        <>
+          <ol className="py-1">
+            {blocks.data.map((block) => (
+              <AgendaRow key={block.id} block={block} now={now} timeZone={timeZone} />
+            ))}
+          </ol>
+          {status.data && status.data.unbooked.length > 0 && (
+            <ul className="border-t border-border px-4 py-2.5 text-xs">
+              {status.data.unbooked.map((item) => (
+                <li key={item.habit_id} className="flex items-center gap-2 text-warning">
+                  <span aria-hidden="true">●</span>
+                  <span>
+                    {item.title}: no free {durationLabel(item.minutes)} slot left today.
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </motion.section>
   );

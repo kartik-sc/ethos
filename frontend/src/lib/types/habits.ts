@@ -47,6 +47,10 @@ export interface Habit {
   protected: boolean;
   goal_id: string | null;
   goal: GoalRef | null;
+  /** Length of the booked session; null when the habit is not scheduled. */
+  session_minutes: number | null;
+  /** Preferred local start, "HH:MM:SS". */
+  session_time: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -65,6 +69,8 @@ export interface HabitInput {
   target_amount?: number | null;
   protected?: boolean;
   goal_id?: string | null;
+  session_minutes?: number | null;
+  session_time?: string | null;
 }
 
 export interface LogInput {

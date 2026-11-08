@@ -71,6 +71,7 @@ function useTaskMutation<TVariables>(
         queryClient.invalidateQueries({ queryKey: ["projects"] }),
         queryClient.invalidateQueries({ queryKey: ["goals"] }),
         queryClient.invalidateQueries({ queryKey: ["analytics"] }),
+        queryClient.invalidateQueries({ queryKey: ["calendar"] }),
       ]),
   });
 }

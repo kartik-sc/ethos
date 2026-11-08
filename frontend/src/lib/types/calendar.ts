@@ -17,9 +17,17 @@ export interface CalendarBlock {
   sync: SyncState;
 }
 
+export interface UnbookedSession {
+  habit_id: string;
+  title: string;
+  minutes: number;
+}
+
 export interface CalendarStatus {
   connected: boolean;
   pending: number;
+  /** Habit sessions due today with no slot booked. */
+  unbooked: UnbookedSession[];
 }
 
 export interface PlannedBlock {

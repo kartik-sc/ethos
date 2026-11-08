@@ -24,6 +24,8 @@ function habit(overrides: Partial<Habit> = {}, summary: Partial<HabitSummary> = 
     protected: false,
     goal_id: null,
     goal: null,
+    session_minutes: null,
+    session_time: null,
     created_at: "2026-11-01T00:00:00Z",
     updated_at: "2026-11-01T00:00:00Z",
     deleted_at: null,

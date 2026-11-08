@@ -39,6 +39,7 @@ function useHabitMutation<TVariables, TResult>(
         queryClient.invalidateQueries({ queryKey: habitKeys.all }),
         queryClient.invalidateQueries({ queryKey: ["goals"] }),
         queryClient.invalidateQueries({ queryKey: ["analytics"] }),
+        queryClient.invalidateQueries({ queryKey: ["calendar"] }),
       ]),
   });
 }
@@ -85,6 +86,7 @@ export function useLogHabit() {
       Promise.all([
         queryClient.invalidateQueries({ queryKey: ["habits", "history", habitId] }),
         queryClient.invalidateQueries({ queryKey: ["analytics"] }),
+        queryClient.invalidateQueries({ queryKey: ["calendar"] }),
       ]),
   });
 }

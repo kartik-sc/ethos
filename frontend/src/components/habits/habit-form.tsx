@@ -39,6 +39,8 @@ interface Draft {
   target: string;
   protected: boolean;
   goalId: string;
+  sessionMinutes: string;
+  sessionTime: string;
 }
 
 function toDraft(habit?: Habit): Draft {
@@ -54,6 +56,8 @@ function toDraft(habit?: Habit): Draft {
     target: habit?.target_amount ? String(Number(habit.target_amount)) : "",
     protected: habit?.protected ?? false,
     goalId: habit?.goal?.id ?? "",
+    sessionMinutes: habit?.session_minutes ? String(habit.session_minutes) : "",
+    sessionTime: habit?.session_time?.slice(0, 5) ?? "",
   };
 }
 
@@ -70,6 +74,8 @@ export function toInput(draft: Draft): HabitInput {
     target_amount: draft.measure !== "check" && draft.target ? Number(draft.target) : null,
     protected: draft.protected,
     goal_id: draft.goalId || null,
+    session_minutes: draft.sessionMinutes ? Number(draft.sessionMinutes) : null,
+    session_time: draft.sessionMinutes && draft.sessionTime ? draft.sessionTime : null,
   };
 }
 
@@ -77,6 +83,12 @@ function draftProblem(draft: Draft): string | null {
   if (!draft.title.trim()) return "Give the habit a name.";
   if (draft.cadence === "daily" && draft.weekdays.length === 0) return "Pick at least one day.";
   if (draft.measure === "amount" && !draft.unit.trim()) return "Add a unit, such as min or pages.";
+  if (draft.sessionMinutes) {
+    const minutes = Number(draft.sessionMinutes);
+    if (!Number.isInteger(minutes) || minutes < 5 || minutes > 480) {
+      return "Session length is 5 to 480 minutes.";
+    }
+  }
   return null;
 }
 
@@ -265,6 +277,40 @@ export function HabitForm({
         </label>
       </div>
 
+      <fieldset className="flex flex-col gap-2">
+        <legend className={cn(labelClass, "mb-1")}>Calendar session (optional)</legend>
+        <div className="flex flex-wrap items-end gap-3">
+          <label className={labelClass}>
+            Minutes
+            <input
+              type="number"
+              inputMode="numeric"
+              min={5}
+              max={480}
+              placeholder="none"
+              value={draft.sessionMinutes}
+              onChange={(event) => set("sessionMinutes", event.target.value)}
+              className={cn(fieldClass, "w-28 font-mono text-xs")}
+            />
+          </label>
+          <label className={labelClass}>
+            Preferred start
+            <input
+              type="time"
+              disabled={!draft.sessionMinutes}
+              value={draft.sessionTime}
+              onChange={(event) => set("sessionTime", event.target.value)}
+              className={cn(fieldClass, "w-32 font-mono text-xs")}
+            />
+          </label>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {draft.cadence === "weekly"
+            ? "Ethos books the sessions still owed this week, spread over the days left."
+            : "Ethos books a session on each due day, at this time if it is free."}
+        </p>
+      </fieldset>
+
       <label className="flex items-start gap-2.5 text-sm">
         <input
           type="checkbox"
@@ -275,7 +321,8 @@ export function HabitForm({
         <span>
           Protected commitment
           <span className="block text-xs text-muted-foreground">
-            Listed first and treated as a fixed commitment, never a flexible one.
+            Listed first; its session is fixed. A missed session gets another slot the same day, at
+            full length, never the next day.
           </span>
         </span>
       </label>
