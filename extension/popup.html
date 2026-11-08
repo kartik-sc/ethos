@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <title>Clip to Ethos</title>
+    <link rel="stylesheet" href="popup.css" />
+    <script type="module" src="popup.js"></script>
+  </head>
+  <body>
+    <header>
+      <span class="mark" aria-hidden="true">&gt;_</span>
+      <h1>Clip to Ethos</h1>
+      <button id="open-settings" type="button" class="ghost" aria-label="Connection settings">
+        Settings
+      </button>
+    </header>
+
+    <form id="clip-form" hidden>
+      <label>
+        Title
+        <input id="title" name="title" maxlength="200" required />
+      </label>
+      <fieldset class="mode">
+        <legend>Clip</legend>
+        <label><input type="radio" name="mode" value="selection" id="mode-selection" /> Selection</label>
+        <label><input type="radio" name="mode" value="page" id="mode-page" checked /> Whole page</label>
+      </fieldset>
+      <label>
+        Folder
+        <select id="folder"></select>
+      </label>
+      <label>
+        Note <span class="hint">(optional)</span>
+        <textarea id="note" rows="3" maxlength="2000" placeholder="Why this is worth keeping"></textarea>
+      </label>
+      <p id="source" class="source"></p>
+      <button id="clip" type="submit">Clip</button>
+    </form>
+
+    <form id="settings-form" hidden>
+      <p class="hint">
+        Create a token in Ethos → Settings → Capture. The clipper can only add notes with it.
+      </p>
+      <label>
+        Ethos address
+        <input id="origin" type="url" placeholder="https://ethos.example.com" required />
+      </label>
+      <label>
+        Token
+        <input id="token" type="password" placeholder="eth_…" autocomplete="off" required />
+      </label>
+      <div class="row">
+        <button id="cancel-settings" type="button" class="ghost">Cancel</button>
+        <button type="submit">Save</button>
+      </div>
+    </form>
+
+    <p id="status" role="status"></p>
+  </body>
+</html>

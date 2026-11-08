@@ -1,0 +1,164 @@
+:root {
+  color-scheme: dark;
+  --bg: #14171c;
+  --card: #1a1e25;
+  --border: #2a303a;
+  --text: #e6e9ee;
+  --muted: #8f97a4;
+  --accent: #7cc8e3;
+  --danger: #f08b8b;
+  --ok: #8fd6a8;
+  font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+body {
+  width: 340px;
+  margin: 0;
+  padding: 14px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.mark {
+  font: 600 11px ui-monospace, "JetBrains Mono", monospace;
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 6px;
+  padding: 2px 5px;
+}
+
+h1 {
+  flex: 1;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+label,
+legend {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+input:not([type="radio"]),
+select,
+textarea {
+  font: inherit;
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 9px;
+}
+
+textarea {
+  resize: vertical;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+fieldset.mode {
+  display: flex;
+  gap: 14px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+fieldset.mode legend {
+  float: left;
+  margin-right: 4px;
+}
+
+fieldset.mode label {
+  flex-direction: row;
+  align-items: center;
+  color: var(--text);
+}
+
+button {
+  font: inherit;
+  font-weight: 500;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: var(--accent);
+  color: #0d1014;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+button.ghost {
+  background: transparent;
+  color: var(--muted);
+  padding: 4px 8px;
+}
+
+button.ghost:hover {
+  color: var(--text);
+}
+
+.row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.hint,
+.source {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.source {
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#status {
+  margin: 10px 0 0;
+  min-height: 1em;
+  font-size: 12px;
+}
+
+#status.error {
+  color: var(--danger);
+}
+
+#status.ok {
+  color: var(--ok);
+}
+
+#status a {
+  color: var(--accent);
+}

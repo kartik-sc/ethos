@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Ethos Clipper",
+  "version": "0.1.0",
+  "description": "Clip a page or a selection to your Ethos notes as Markdown.",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "optional_host_permissions": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
+  "action": {
+    "default_title": "Clip to Ethos",
+    "default_popup": "popup.html",
+    "default_icon": { "128": "icon-128.png" }
+  },
+  "icons": { "128": "icon-128.png" },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": { "default": "Alt+Shift+E" },
+      "description": "Clip the current page"
+    }
+  }
+}

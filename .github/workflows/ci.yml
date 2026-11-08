@@ -63,6 +63,7 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      - run: node --test ../extension/markdown.test.mjs
       - run: pnpm build
 
   images:
