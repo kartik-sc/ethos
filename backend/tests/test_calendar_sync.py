@@ -1,6 +1,8 @@
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import select
+import pytest
+from sqlalchemy import select, text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.calendar import sync
@@ -30,10 +32,6 @@ class FakeCalendar:
         self._guard(block.title)
         self.events.setdefault(event_id, block.title)  # an existing id is not created twice
         return event_id
-
-    def update(self, block: CalendarBlock, external_id: str) -> None:
-        self._guard(block.title)
-        self.events[external_id] = block.title
 
     def delete(self, external_id: str) -> None:
         self._guard("")
@@ -124,6 +122,17 @@ def test_deletions_reach_the_calendar_before_the_row_goes(session: Session) -> N
 
     assert calendar.events == {}
     assert session.scalars(select(CalendarBlock)).all() == []
+
+
+def test_the_outbox_cannot_hold_an_update_that_would_be_marked_synced(session: Session) -> None:
+    """Blocks are never edited in place, so an update entry could only ever be a false success."""
+    created = block(session, "Essay")
+    with pytest.raises(IntegrityError):
+        session.execute(
+            text("UPDATE calendar_blocks SET sync_op = 'update' WHERE id = :id"), {"id": created.id}
+        )
+    session.rollback()
+    assert session.get(CalendarBlock, created.id).sync_op is SyncOp.CREATE
 
 
 def test_without_a_connection_nothing_is_pushed() -> None:

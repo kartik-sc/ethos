@@ -35,8 +35,6 @@ class ProviderRejectedError(Exception):
 class CalendarProvider(Protocol):
     def create(self, block: CalendarBlock, event_id: str) -> str: ...
 
-    def update(self, block: CalendarBlock, external_id: str) -> None: ...
-
     def delete(self, external_id: str) -> None: ...
 
 
@@ -73,8 +71,6 @@ def _pending(session: Session, limit: int) -> Sequence[CalendarBlock]:
 def _apply(session: Session, block: CalendarBlock, provider: CalendarProvider) -> None:
     if block.sync_op is SyncOp.CREATE:
         block.external_id = provider.create(block, event_id(block))
-    elif block.sync_op is SyncOp.UPDATE and block.external_id:
-        provider.update(block, block.external_id)
     elif block.sync_op is SyncOp.DELETE:
         if block.external_id:
             provider.delete(block.external_id)

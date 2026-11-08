@@ -36,7 +36,6 @@ class SyncOp(StrEnum):
     """The change still owed to Google Calendar. Each block is its own outbox entry."""
 
     CREATE = "create"
-    UPDATE = "update"
     DELETE = "delete"
 
 
