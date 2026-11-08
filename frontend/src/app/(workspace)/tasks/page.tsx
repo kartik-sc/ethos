@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { TaskPlanner } from "@/components/calendar/task-planner";
 import { PageHeader } from "@/components/page-header";
 import { TaskBoard } from "@/components/tasks/task-board";
 
@@ -12,6 +13,7 @@ export default function TasksPage() {
         title="Tasks"
         description="Standalone work items. Deadlines and priority decide the Next Action on Home."
       />
+      <TaskPlanner />
       <TaskBoard />
     </div>
   );

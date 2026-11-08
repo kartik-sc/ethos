@@ -4,7 +4,8 @@ import { AnalyticsSnapshot } from "@/components/home/analytics-snapshot";
 import { DeadlineRadar } from "@/components/home/deadline-radar";
 import { Greeting } from "@/components/home/greeting";
 import { HabitsToday } from "@/components/home/habits-today";
-import { AgendaPanel, QuoteCard, TaskStrip } from "@/components/home/home-panels";
+import { AgendaPanel } from "@/components/calendar/agenda-panel";
+import { QuoteCard, TaskStrip } from "@/components/home/home-panels";
 import { NextActionPanel } from "@/components/home/next-action";
 import { SystemReadout } from "@/components/home/system-readout";
 

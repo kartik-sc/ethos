@@ -2,6 +2,7 @@
 
 import { type FormEvent, type KeyboardEvent, useState } from "react";
 
+import { ScheduleTask } from "@/components/calendar/schedule-task";
 import { Button } from "@/components/ui/button";
 import { useProjects } from "@/hooks/use-projects";
 import { useUpdateTask } from "@/hooks/use-tasks";
@@ -202,16 +203,19 @@ export function TaskEditor({ task, onClose }: TaskEditorProps) {
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="text-muted-foreground"
-          disabled={update.isPending}
-          onClick={() => update.mutate({ id: task.id, changes: { status: "cancelled" } })}
-        >
-          Mark as cancelled
-        </Button>
+        <div className="flex flex-wrap items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground"
+            disabled={update.isPending}
+            onClick={() => update.mutate({ id: task.id, changes: { status: "cancelled" } })}
+          >
+            Mark as cancelled
+          </Button>
+          {task.status === "open" && <ScheduleTask taskId={task.id} />}
+        </div>
         <div className="flex items-center gap-2">
           <span className="hidden font-mono text-[0.6875rem] text-faint sm:inline">
             esc to close · ctrl+enter to save

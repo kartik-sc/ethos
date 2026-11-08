@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, Quote as QuoteIcon } from "lucide-react";
+import { Quote as QuoteIcon } from "lucide-react";
 import { motion } from "motion/react";
 import Link from "next/link";
 
@@ -54,30 +54,6 @@ export function TaskStrip() {
         </div>
       ))}
     </motion.dl>
-  );
-}
-
-/** Stands in until Google Calendar is connected; says so rather than showing fake events. */
-export function AgendaPanel() {
-  return (
-    <motion.section
-      {...fadeIn}
-      aria-labelledby="agenda-heading"
-      className="rounded-xl border border-border bg-card/80"
-    >
-      <div className="border-b border-border px-4 py-2.5">
-        <h2 id="agenda-heading" className="micro-label">
-          Today&apos;s agenda
-        </h2>
-      </div>
-      <div className="flex items-center gap-3 px-4 py-4 text-sm text-muted-foreground">
-        <CalendarClock aria-hidden="true" className="size-4 shrink-0 text-faint" />
-        <p>
-          Calendar not connected. Events and time blocks will appear here once Google Calendar is
-          linked.
-        </p>
-      </div>
-    </motion.section>
   );
 }
 
