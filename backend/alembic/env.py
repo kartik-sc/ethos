@@ -6,6 +6,7 @@ import app.files.models
 import app.goals.models
 import app.habits.models
 import app.inbox.models
+import app.integrations.models
 import app.notes.models
 import app.preferences.models
 import app.projects.models

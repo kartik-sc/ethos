@@ -218,6 +218,7 @@ def run(
     now: datetime,
     interpreter: Interpreter,
     confirm_duplicate: bool,
+    source: str = "palette",
 ) -> CommandResult:
     """Executes one command, or raises with what is missing, wrong or possibly duplicated."""
     parsed = _parse(text, today, interpreter)
@@ -309,7 +310,7 @@ def run(
             query=parsed.title,
         )
 
-    item = inbox.capture(session, parsed.title, source="palette")
+    item = inbox.capture(session, parsed.title, source=source)
     return CommandResult(
         kind="capture", message="Added to the Inbox", record_kind="inbox", record_id=item.id
     )
