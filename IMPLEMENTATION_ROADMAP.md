@@ -54,7 +54,7 @@ This is the short execution checklist. The full product and technical requiremen
 - [x] Duplicate detection and confirmation.
 - [ ] Brain-dump classification without task-subtask decomposition.
 - [x] 24-hour and 48-hour Inbox ageing indicators.
-- [ ] iPhone Shortcuts capture endpoint.
+- [x] iPhone Shortcuts capture endpoint.
 - [ ] WhatsApp Business capture/notification integration.
 - [ ] Browser extension for full-page and selected-text Markdown clipping.
 

@@ -173,6 +173,10 @@ FastAPI serves OpenAPI docs at `/api/docs` outside production.
 | GET | `/api/v1/files/{id}/content` | Download (always as an attachment) |
 | PATCH / DELETE | `/api/v1/files/{id}` · POST `…/restore` | Rename, Trash and restore |
 
+| GET / POST | `/api/v1/integration-tokens` | Capture tokens; the secret is returned once, on creation |
+| DELETE | `/api/v1/integration-tokens/{id}` | Revoke (kept in the list as revoked) |
+| POST | `/api/v1/capture` | `Authorization: Bearer eth_…`, body `{"text": …}`. Token-only; `401` otherwise |
+
 | GET | `/api/v1/notes/tree` | Folders, live notes (no bodies) and tags in use |
 | POST | `/api/v1/notes` | Create a note |
 | GET / PUT | `/api/v1/notes/{id}` | Read with links and backlinks; save with `base_version` (409 + `current` if stale) |
@@ -267,6 +271,21 @@ Inbox; `/` lists commands. Commands are parsed deterministically in the backend
 - Deleting a file or its project moves it to Trash; restoring the project restores the files
   trashed with it. The hourly worker pass purges expired rows and then removes blobs that no
   row references (older than an hour, so in-flight uploads are safe).
+
+### Shortcut capture
+
+Settings → Capture creates a token for a capture client such as an iPhone Shortcut. Tokens are
+`eth_` + 32 random bytes; only their SHA-256 is stored, with the first 12 characters for
+recognition and a last-used time. A token can call `POST /api/v1/capture` and nothing else; it
+is not a login and creates no account.
+
+A capture runs through the same deterministic parser as the palette. Clear commands execute
+(`/task Book dentist by fri`). Anything that would need an answer (a missing date, a possible
+duplicate) or plain text is stored whole in the Inbox, marked `shortcut`. A `201` always means
+the text is stored; the JSON `message` says where. The Shortcut steps are listed in Settings.
+
+Until Google sign-in lands, the token management endpoints are as open as the rest of the local
+API; the capture endpoint already refuses anything without a live token.
 
 ### Records over time
 
