@@ -306,7 +306,9 @@ Inbox; `/` lists commands. Commands are parsed deterministically in the backend
 - Everything that books time takes one PostgreSQL advisory lock for its transaction, so the
   worker, planning and scheduling can never both claim the same free slot.
 - **Calendar sync** (`app/calendar/sync.py`) pushes each pending change through a small
-  provider interface (`create`/`update`/`delete`). Creates use an id derived from the block, so
+  provider interface (`create`/`delete`). Blocks are never edited in place: the planner only
+  books free slots, and habit recovery releases a missed block before booking a new one. So no
+  update entry exists, and the database rejects one. Creates use an id derived from the block, so
   a crash between the provider call and the commit never creates a second event. An outage
   leaves changes pending without using up attempts; a rejected change is retried up to five
   times, then shows as *sync failed*. Until Google Calendar is connected, `get_provider()`

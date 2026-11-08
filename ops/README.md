@@ -49,14 +49,50 @@ Monthly, and after any change to backups or migrations:
 ops/restore-drill.sh backups/<set>
 ```
 
-It checks the checksums, restores the dump into a scratch database (`ethos_restore_drill`),
-prints row counts beside the live ones, unpacks the files into a temporary directory, and
-removes everything afterwards. The live database is never touched.
+It checks the checksums, starts a throwaway PostgreSQL container with the same image as the
+stack and no published ports, restores the dump into it, and then:
+
+- validates every foreign key;
+- compares every table with the live database by row count and content digest. The worker
+  writes `calendar_blocks` and `service_heartbeats` continuously, so those are count-only;
+- checks each uploaded file's stored checksum and size against the unpacked archive.
+
+Any mismatch makes the script exit non-zero. The container and the unpacked files are removed
+afterwards, and the live database is never touched. Run it right after `ops/backup.sh` or on a
+quiet system, otherwise live tables that users edit will show `DIFFERS`.
+
+**Verified 2026-11-08** (set `20261108T065255Z`, one project file, 4 notes, 3 note links, 7
+versions): all 17 foreign keys valid; 19 of 20 tables match by digest, the 20th
+(`service_heartbeats`) is volatile. Two negative tests failed as they should: a tampered file
+blob (with the outer checksums recomputed) and a live note edit. Both were reverted.
+
+## Rehearsing a full restore in isolation
+
+The drill checks the backup. To rehearse the recovery steps below, bring up a second compose
+project with its own volumes and ports. It never shares state with the live stack:
+
+```sh
+export COMPOSE_PROJECT_NAME=ethos-drill HTTP_PORT=8081 HTTPS_PORT=8444 POSTGRES_PORT=5443
+docker compose up -d --build --wait
+```
+
+Then run *Restoring for real* below, skipping its first `ops/backup.sh` step, which would
+overwrite `backups/last-success` with the rehearsal state. Tear it down with
+`docker compose down -v` while `COMPOSE_PROJECT_NAME` is still set. That removes only the
+`ethos-drill_*` volumes.
+
+**Verified 2026-11-08** with set `20261108T065255Z`: the restored database matched live on 19 of
+20 tables (`service_heartbeats` differs because the rehearsal worker writes it). The uploaded file
+downloaded byte-for-byte identical to the original, and a linked note's API JSON (title, folder,
+tags, version, content) was identical to live.
 
 ## Restoring for real
 
 Only when the owner decides the live data is lost or wrong. Take a fresh backup of the current
-state first, even if it looks broken.
+state first, even if it looks broken. On Windows, run these from Git Bash with
+`MSYS_NO_PATHCONV=1` set. Otherwise the `-v` path is rewritten and the file step fails. Check
+the exit status of each step, since the file step's failure does not stop the sequence on its
+own.
 
 ```sh
 ops/backup.sh                                   # keep what is there now
@@ -67,6 +103,10 @@ docker compose run --rm --no-deps -v "$PWD/backups/<set>:/restore:ro" worker \
   sh -c 'find /data/files -mindepth 1 -delete && tar -xzf /restore/files.tar.gz -C /data/files'
 docker compose up -d --wait                     # migrate runs first and brings the schema up to date
 ```
+
+Afterwards, spot-check the restored data: row counts for the main tables, one note, and one
+uploaded file downloaded through the API. `ops/restore-drill.sh` checks the backup set itself,
+not the live database, so it does not replace these checks.
 
 ## Application rollback
 
