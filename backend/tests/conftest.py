@@ -69,6 +69,7 @@ def _truncate(db_session: Session) -> None:
             "note_folders",
             "tags",
             "integration_tokens",
+            "calendar_blocks",
         )
     )
     db_session.execute(text(f"TRUNCATE {tables} CASCADE"))

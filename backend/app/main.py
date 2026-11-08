@@ -1,6 +1,7 @@
 from fastapi import APIRouter, FastAPI
 
 from app.analytics.router import router as analytics_router
+from app.calendar.router import router as calendar_router
 from app.commands.router import router as commands_router
 from app.core.config import get_settings
 from app.core.logging import configure_logging
@@ -48,6 +49,7 @@ def create_app() -> FastAPI:
     v1.include_router(analytics_router)
     v1.include_router(files_router)
     v1.include_router(integrations_router)
+    v1.include_router(calendar_router)
     app.include_router(v1)
     return app
 
