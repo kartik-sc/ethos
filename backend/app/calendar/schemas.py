@@ -26,11 +26,26 @@ class BlockRead(BaseModel):
     sync: SyncState
 
 
+class UnbookedSession(BaseModel):
+    habit_id: uuid.UUID
+    title: str
+    minutes: int
+
+
 class CalendarStatus(BaseModel):
     # Google Calendar is not connected until the owner's OAuth client exists.
     connected: bool
     # Ethos changes waiting to be written to Google Calendar.
     pending: int
+    # Habit sessions due today with no slot booked (for a protected habit: no recovery slot).
+    unbooked: list[UnbookedSession]
+
+
+class RefreshResult(BaseModel):
+    done: int
+    missed: int
+    recovered: int
+    booked: int
 
 
 class PlanRequest(BaseModel):

@@ -6,10 +6,13 @@ from types import FrameType
 
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.calendar import habit_sessions
+from app.calendar.service import Context
 from app.core.config import get_settings
 from app.core.db import get_sessionmaker
 from app.core.logging import configure_logging
 from app.files.service import sweep_orphans
+from app.preferences.service import get_preferences
 from app.system.service import WORKER_SERVICE, record_heartbeat
 from app.trash.service import purge_expired
 
@@ -39,6 +42,22 @@ def purge_trash() -> None:
         logger.exception("trash purge failed")
 
 
+def refresh_habit_sessions() -> None:
+    """Settles past habit sessions (recovering a missed protected one the same day) and books
+    today's and tomorrow's."""
+    try:
+        with get_sessionmaker()() as session:
+            context = Context.of(get_preferences(session), datetime.now(UTC))
+            report = habit_sessions.refresh(session, context, context.today + timedelta(days=1))
+        changes = {
+            name: value for name, value in vars(report).items() if name != "unbooked" and value
+        }
+        if changes:
+            logger.info("habit sessions refreshed", extra=changes)
+    except SQLAlchemyError:
+        logger.exception("habit session refresh failed")
+
+
 def run(stop: threading.Event) -> None:
     interval = get_settings().worker_heartbeat_seconds
     started_at = datetime.now(UTC)
@@ -46,6 +65,7 @@ def run(stop: threading.Event) -> None:
     logger.info("worker started", extra={"heartbeat_seconds": interval})
     while not stop.is_set():
         beat(started_at)
+        refresh_habit_sessions()
         if last_purge is None or datetime.now(UTC) - last_purge >= PURGE_EVERY:
             purge_trash()
             last_purge = datetime.now(UTC)

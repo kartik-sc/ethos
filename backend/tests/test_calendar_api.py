@@ -12,6 +12,8 @@ from app.calendar import service
 from app.calendar.models import BlockKind, CalendarBlock
 from app.calendar.router import scheduling_context
 from app.core.db import get_session
+from app.habits.models import Habit
+from app.habits.schemas import HabitCreate
 from app.preferences.service import get_preferences
 
 IST = ZoneInfo("Asia/Kolkata")
@@ -60,7 +62,7 @@ def event(session: Session, start: str, end: str, title: str = "Lecture") -> Non
 
 
 def test_status_is_honest_about_the_missing_connection(client: TestClient) -> None:
-    assert client.get(f"{CAL}/status").json() == {"connected": False, "pending": 0}
+    assert client.get(f"{CAL}/status").json() == {"connected": False, "pending": 0, "unbooked": []}
 
 
 def test_scheduling_a_task_uses_its_duration_and_queues_the_sync(client: TestClient) -> None:
@@ -186,3 +188,25 @@ def test_work_longer_than_the_day_is_refused(client: TestClient) -> None:
     response = client.post(f"{CAL}/tasks/{created['id']}/schedule")
     assert response.status_code == 409
     assert response.json()["detail"] == "It is longer than the working day in Settings"
+
+
+def test_planning_books_habit_sessions_first(client: TestClient, session: Session) -> None:
+    data = HabitCreate.model_validate(
+        {
+            "title": "LeetCode",
+            "cadence": "daily",
+            "weekdays": list(range(7)),
+            "protected": True,
+            "session_minutes": 120,
+            "session_time": "09:00",
+        }
+    )
+    session.add(Habit(**data.model_dump()))
+    session.commit()
+    task(client, "Essay", planned_minutes=60, due_date=MONDAY.isoformat())
+
+    result = client.post(f"{CAL}/plan", json={"horizon_days": 1}).json()
+
+    assert result["placed"][0]["starts_at"] == at(MONDAY, 11)
+    kinds = [(b["kind"], b["fixed"]) for b in client.get(f"{CAL}/blocks").json()]
+    assert kinds == [("habit", True)]

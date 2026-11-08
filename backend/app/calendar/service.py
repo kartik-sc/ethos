@@ -11,6 +11,7 @@ from app.calendar import slots
 from app.calendar.models import BlockKind, BlockStatus, CalendarBlock, SyncOp
 from app.calendar.schemas import BlockRead, PlannedBlock, PlanResult, SyncState, UnplacedTask
 from app.core.clock import local_today
+from app.habits.models import Habit
 from app.preferences.models import Preferences
 from app.tasks.models import Task, TaskStatus
 from app.tasks.service import rank_key
@@ -67,13 +68,16 @@ def read(block: CalendarBlock) -> BlockRead:
 
 
 def _visible() -> Select[CalendarBlock]:
-    """Blocks that occupy time: not waiting to be deleted, and not for a task in Trash."""
+    """Blocks that occupy time: not removed, and not for a task or habit in Trash."""
     return (
         select(CalendarBlock)
         .outerjoin(Task, Task.id == CalendarBlock.task_id)
+        .outerjoin(Habit, Habit.id == CalendarBlock.habit_id)
         .where(
+            CalendarBlock.status != BlockStatus.CANCELLED,
             or_(CalendarBlock.sync_op.is_(None), CalendarBlock.sync_op != SyncOp.DELETE),
             Task.deleted_at.is_(None),
+            Habit.deleted_at.is_(None),
         )
     )
 
@@ -229,7 +233,7 @@ def plan_tasks(session: Session, context: Context, horizon_days: int, *, apply: 
 
 def get_block(session: Session, block_id: uuid.UUID) -> CalendarBlock:
     block = session.get(CalendarBlock, block_id)
-    if block is None or block.sync_op is SyncOp.DELETE:
+    if block is None or block.sync_op is SyncOp.DELETE or block.status is BlockStatus.CANCELLED:
         raise BlockNotFoundError
     return block
 
@@ -239,10 +243,14 @@ class FixedBlockError(Exception):
 
 
 def remove_block(session: Session, block: CalendarBlock) -> None:
-    """A block Google never saw is simply deleted; otherwise the deletion is queued."""
-    if block.kind is BlockKind.EVENT:
+    """Fixed blocks stay. A removed habit session is kept as cancelled so it is not booked
+    again that day. Otherwise a block Google never saw is deleted, or its deletion queued."""
+    if block.fixed or block.kind is BlockKind.EVENT:
         raise FixedBlockError
-    if block.external_id is None:
+    if block.kind is BlockKind.HABIT:
+        block.status = BlockStatus.CANCELLED
+        block.sync_op = None if block.external_id is None else SyncOp.DELETE
+    elif block.external_id is None:
         session.delete(block)
     else:
         block.sync_op = SyncOp.DELETE

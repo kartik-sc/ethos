@@ -16,6 +16,7 @@ Weekday = Annotated[int, Field(ge=0, le=6)]
 Unit = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=16)]
 Amount = Annotated[Decimal, Field(gt=0, max_digits=8, decimal_places=2)]
 Note = Annotated[str, StringConstraints(strip_whitespace=True, max_length=1000)]
+SessionMinutes = Annotated[int, Field(ge=5, le=480)]
 
 SPAN_UNIT = "h"
 
@@ -32,6 +33,8 @@ class HabitCreate(BaseModel):
     target_amount: Amount | None = None
     protected: bool = False
     goal_id: uuid.UUID | None = None
+    session_minutes: SessionMinutes | None = None
+    session_time: time | None = None
 
     @model_validator(mode="after")
     def consistent_schedule_and_measure(self) -> Self:
@@ -51,6 +54,11 @@ class HabitCreate(BaseModel):
             self.unit = SPAN_UNIT
         elif self.unit is None:
             raise ValueError("an amount habit needs a unit")
+
+        if self.session_minutes is None:
+            self.session_time = None
+        elif self.session_time is not None:
+            self.session_time = self.session_time.replace(second=0, microsecond=0, tzinfo=None)
         return self
 
 
@@ -68,6 +76,8 @@ class HabitUpdate(BaseModel):
     target_amount: Amount | None = None
     protected: bool | None = None
     goal_id: uuid.UUID | None = None
+    session_minutes: SessionMinutes | None = None
+    session_time: time | None = None
 
 
 class LogWrite(BaseModel):
@@ -119,6 +129,8 @@ class HabitRead(BaseModel):
     protected: bool
     goal_id: uuid.UUID | None
     goal: GoalRef | None
+    session_minutes: int | None
+    session_time: time | None
     created_at: datetime
     updated_at: datetime
     deleted_at: datetime | None

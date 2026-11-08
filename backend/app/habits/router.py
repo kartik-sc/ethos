@@ -1,5 +1,5 @@
 import uuid
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -7,6 +7,8 @@ from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
+from app.calendar import habit_sessions
+from app.calendar.service import Context
 from app.core.clock import local_today
 from app.core.db import get_session
 from app.goals.service import GoalUnavailableError
@@ -14,6 +16,7 @@ from app.habits import service
 from app.habits.models import Habit, HabitLog
 from app.habits.schemas import DayRead, HabitCreate, HabitRead, HabitUpdate, HabitView, LogWrite
 from app.preferences.deps import TimezoneDep
+from app.preferences.service import get_preferences
 
 router = APIRouter(prefix="/habits", tags=["habits"])
 
@@ -43,6 +46,25 @@ def _goal_not_found() -> HTTPException:
     return HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Goal not found")
 
 
+def _booking(habit: Habit) -> tuple[object, ...]:
+    """The fields that decide when a habit's sessions are booked."""
+    return (
+        habit.session_minutes,
+        habit.session_time,
+        habit.cadence,
+        habit.weekdays,
+        habit.times_per_week,
+        habit.protected,
+    )
+
+
+def _rebook(session: Session, habit: Habit) -> None:
+    now = datetime.now(UTC)
+    habit_sessions.release_future(session, now, habit.id)
+    context = Context.of(get_preferences(session), now)
+    habit_sessions.refresh(session, context, context.today + timedelta(days=1))
+
+
 @router.get("")
 def list_habits(
     session: SessionDep,
@@ -61,6 +83,8 @@ def create_habit(data: HabitCreate, session: SessionDep, timezone: TimezoneDep) 
         habit = service.create_habit(session, data)
     except GoalUnavailableError:
         raise _goal_not_found() from None
+    if habit.session_minutes is not None:
+        _rebook(session, habit)
     return _read(habit, {}, timezone)
 
 
@@ -74,6 +98,7 @@ def update_habit(
     habit_id: uuid.UUID, changes: HabitUpdate, session: SessionDep, timezone: TimezoneDep
 ) -> HabitRead:
     habit = _load(session, habit_id)
+    booking = _booking(habit)
     try:
         service.update_habit(session, habit, changes)
     except ValidationError as error:
@@ -82,6 +107,8 @@ def update_habit(
         ) from None
     except GoalUnavailableError:
         raise _goal_not_found() from None
+    if _booking(habit) != booking:
+        _rebook(session, habit)
     return _read_one(session, habit, timezone)
 
 

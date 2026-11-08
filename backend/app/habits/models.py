@@ -52,6 +52,10 @@ class Habit(Base):
     unit: Mapped[str | None] = mapped_column(String(16))
     target_amount: Mapped[Decimal | None] = mapped_column(Numeric(8, 2))
     protected: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    # When set, Ethos books a session of this length on each day the habit is due.
+    session_minutes: Mapped[int | None] = mapped_column(SmallInteger)
+    # Preferred local start time for the session; kept as clock time across timezone changes.
+    session_time: Mapped[time | None] = mapped_column(Time)
     goal_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("goals.id", ondelete="SET NULL"), index=True
     )

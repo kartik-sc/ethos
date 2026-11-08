@@ -27,6 +27,8 @@ class BlockStatus(StrEnum):
     SCHEDULED = "scheduled"
     DONE = "done"
     MISSED = "missed"
+    # The owner removed a habit session; kept so the session is not booked again that day.
+    CANCELLED = "cancelled"
 
 
 class SyncOp(StrEnum):
