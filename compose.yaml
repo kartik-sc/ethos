@@ -88,10 +88,12 @@ services:
     logging: *logging
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    # Loopback only by default: the API has no sign-in until Google OAuth lands, so the stack
+    # must not be reachable from the local network. Production sets BIND_ADDRESS=0.0.0.0.
     ports:
-      - "${HTTP_PORT:-80}:80"
-      - "${HTTPS_PORT:-443}:443"
-      - "${HTTPS_PORT:-443}:443/udp"
+      - "${BIND_ADDRESS:-127.0.0.1}:${HTTP_PORT:-80}:80"
+      - "${BIND_ADDRESS:-127.0.0.1}:${HTTPS_PORT:-443}:443"
+      - "${BIND_ADDRESS:-127.0.0.1}:${HTTPS_PORT:-443}:443/udp"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

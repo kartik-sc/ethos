@@ -120,6 +120,7 @@ refuses to start if a value is missing or invalid, and validation errors never e
 | `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | compose | Use a URL-safe password (e.g. `openssl rand -hex 24`) |
 | `POSTGRES_PORT` | compose (dev) | Host port for the dev override |
 | `SITE_ADDRESS` | Caddy | `:80` locally; the domain in production (Caddy provisions HTTPS) |
+| `BIND_ADDRESS` | compose | Interface Caddy publishes on. Default `127.0.0.1`; `0.0.0.0` only once sign-in exists |
 | `HTTP_PORT` / `HTTPS_PORT` | compose | `80`/`443` in production |
 | `API_ORIGIN` | `next dev` | Dev proxy target, default `http://127.0.0.1:8000` |
 
