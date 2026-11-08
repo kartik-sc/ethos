@@ -7,9 +7,9 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.core.config import Settings, get_settings
 from app.core.db import get_session
 from app.goals.service import GoalUnavailableError
+from app.preferences.deps import TimezoneDep
 from app.preferences.service import get_preferences
 from app.tasks import service
 from app.tasks.models import Task
@@ -70,10 +70,8 @@ def create_task(data: TaskCreate, session: SessionDep) -> TaskRead:
 
 
 @router.get("/next-action")
-def next_action(
-    session: SessionDep, settings: Annotated[Settings, Depends(get_settings)]
-) -> NextAction:
-    pick = service.current_next_action(session, datetime.now(UTC), settings.default_timezone)
+def next_action(session: SessionDep, timezone: TimezoneDep) -> NextAction:
+    pick = service.current_next_action(session, datetime.now(UTC), timezone)
     if pick is None:
         return NextAction(task=None, reason=None, overridden=False)
     return NextAction(

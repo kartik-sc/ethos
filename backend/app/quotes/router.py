@@ -6,8 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.clock import local_today
-from app.core.config import Settings, get_settings
 from app.core.db import get_session
+from app.preferences.deps import TimezoneDep
 from app.quotes import service
 from app.quotes.models import Quote
 from app.quotes.schemas import QuoteRead, QuoteWrite
@@ -31,10 +31,8 @@ def list_quotes(session: SessionDep) -> list[QuoteRead]:
 
 
 @router.get("/today")
-def quote_of_the_day(
-    session: SessionDep, settings: Annotated[Settings, Depends(get_settings)]
-) -> QuoteRead | None:
-    today = local_today(datetime.now(UTC), settings.default_timezone)
+def quote_of_the_day(session: SessionDep, timezone: TimezoneDep) -> QuoteRead | None:
+    today = local_today(datetime.now(UTC), timezone)
     quote = service.quote_of_the_day(session, today)
     return QuoteRead.model_validate(quote) if quote else None
 

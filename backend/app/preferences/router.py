@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.db import get_session
@@ -19,4 +19,7 @@ def read_preferences(session: SessionDep) -> PreferencesRead:
 
 @router.patch("")
 def update_preferences(changes: PreferencesUpdate, session: SessionDep) -> PreferencesRead:
-    return PreferencesRead.model_validate(service.update_preferences(session, changes))
+    try:
+        return PreferencesRead.model_validate(service.update_preferences(session, changes))
+    except service.InvalidPreferencesError as invalid:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, invalid.message) from None

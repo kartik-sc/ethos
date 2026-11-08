@@ -90,5 +90,5 @@ def test_closed_tasks_move_from_done_to_archived(client: TestClient, session: Se
 
 
 def test_preferences_defaults_and_validation(client: TestClient) -> None:
-    assert client.get("/api/v1/preferences").json() == {"archive_after_days": 30}
+    assert client.get("/api/v1/preferences").json()["archive_after_days"] == 30
     assert client.patch("/api/v1/preferences", json={"archive_after_days": 0}).status_code == 422

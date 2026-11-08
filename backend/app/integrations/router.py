@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 
 from app.commands.interpreter import Interpreter, get_interpreter
 from app.core.clock import local_today
-from app.core.config import Settings, get_settings
 from app.core.db import get_session
 from app.integrations import service
 from app.integrations.schemas import (
@@ -17,6 +16,7 @@ from app.integrations.schemas import (
     TokenCreated,
     TokenRead,
 )
+from app.preferences.deps import TimezoneDep
 
 router = APIRouter(tags=["integrations"])
 
@@ -66,13 +66,11 @@ def revoke_token(token_id: uuid.UUID, session: SessionDep) -> TokenRead:
 def capture(
     data: CaptureRequest,
     session: SessionDep,
-    settings: Annotated[Settings, Depends(get_settings)],
+    timezone: TimezoneDep,
     interpreter: Annotated[Interpreter, Depends(get_interpreter)],
 ) -> CaptureResult:
     """Capture from a trusted client (an iPhone Shortcut) with `Authorization: Bearer <token>`.
 
     201 means the capture is stored: either the command ran or the text is in the Inbox."""
     now = datetime.now(UTC)
-    return service.capture(
-        session, data.text, local_today(now, settings.default_timezone), now, interpreter
-    )
+    return service.capture(session, data.text, local_today(now, timezone), now, interpreter)

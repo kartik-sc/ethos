@@ -10,23 +10,22 @@ from app.commands import service
 from app.commands.interpreter import Interpreter, get_interpreter
 from app.commands.schemas import CommandPreview, CommandRequest, CommandResult
 from app.core.clock import local_today
-from app.core.config import Settings, get_settings
 from app.core.db import get_session
+from app.preferences.deps import TimezoneDep
 
 router = APIRouter(prefix="/commands", tags=["commands"])
 
 SessionDep = Annotated[Session, Depends(get_session)]
-SettingsDep = Annotated[Settings, Depends(get_settings)]
 InterpreterDep = Annotated[Interpreter, Depends(get_interpreter)]
 
 
 @router.post("/preview")
 def preview(
-    data: CommandRequest, session: SessionDep, settings: SettingsDep, interpreter: InterpreterDep
+    data: CommandRequest, session: SessionDep, timezone: TimezoneDep, interpreter: InterpreterDep
 ) -> CommandPreview:
     """What Enter would do: parsed fields, one question if something essential is missing,
     and similar existing records. Writes nothing."""
-    today = local_today(datetime.now(UTC), settings.default_timezone)
+    today = local_today(datetime.now(UTC), timezone)
     return service.preview(session, data.text, today, interpreter)
 
 
@@ -38,10 +37,10 @@ def preview(
     },
 )
 def run(
-    data: CommandRequest, session: SessionDep, settings: SettingsDep, interpreter: InterpreterDep
+    data: CommandRequest, session: SessionDep, timezone: TimezoneDep, interpreter: InterpreterDep
 ) -> Any:
     now = datetime.now(UTC)
-    today = local_today(now, settings.default_timezone)
+    today = local_today(now, timezone)
     try:
         result: CommandResult = service.run(
             session, data.text, today, now, interpreter, data.confirm_duplicate
