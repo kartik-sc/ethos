@@ -20,6 +20,7 @@ import type { Project, ProjectUpdate } from "@/lib/types/projects";
 import type { LifeArea } from "@/lib/types/tasks";
 import { cn } from "@/lib/utils";
 
+import { ProjectFiles } from "./project-files";
 import { ProjectProgress } from "./project-progress";
 
 function ProjectEditor({ project, onClose }: { project: Project; onClose: () => void }) {
@@ -254,6 +255,7 @@ export function ProjectDetail({ id }: { id: string }) {
         )}
       </div>
       <TaskBoard scope={{ projectId: data.id }} />
+      <ProjectFiles projectId={data.id} />
     </div>
   );
 }

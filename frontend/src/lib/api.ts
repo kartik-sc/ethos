@@ -67,3 +67,23 @@ export async function apiSend<T = void>(
   if (!response.ok) throw await failure(response);
   return (response.status === 204 ? undefined : await response.json()) as T;
 }
+
+/** Sends a file as the raw request body; query parameters carry its name and options. */
+export async function apiUpload<T>(path: string, file: Blob, query: URLSearchParams): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${path}?${query}`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": file.type || "application/octet-stream",
+      },
+      body: file,
+      credentials: "same-origin",
+    });
+  } catch {
+    throw new ApiError("API unreachable", null);
+  }
+  if (!response.ok) throw await failure(response);
+  return (await response.json()) as T;
+}
