@@ -68,8 +68,8 @@ This is the short execution checklist. The full product and technical requiremen
 - [ ] Sunday WhatsApp metrics-and-observations report.
 - [x] Weekly/monthly analytics.
 - [ ] Habit consistency and selected quantitative tracking.
-- [ ] File storage on persistent VPS volume, 25 MB limit and overwrite confirmation.
-- [ ] Project-associated file links and backup inclusion.
+- [x] File storage on persistent VPS volume, 25 MB limit and overwrite confirmation.
+- [ ] Project-associated file links and backup inclusion. *(links done; backups land with Phase 5)*
 - [x] Concurrent note edit conflict detection/merge.
 - [ ] PWA installability and purpose-built mobile screens.
 

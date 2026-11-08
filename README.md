@@ -116,6 +116,7 @@ refuses to start if a value is missing or invalid, and validation errors never e
 | `DATABASE_URL` | backend | Must use `postgresql+psycopg://`. Compose builds it from `POSTGRES_*` |
 | `TEST_DATABASE_URL` | tests | Separate database; tests drop and recreate its schema |
 | `WORKER_HEARTBEAT_SECONDS` | worker, api | 5–300, default 30 |
+| `FILE_STORAGE_DIR` | api, worker | Uploaded files. Default `data/files` (host); `/data/files` on the `files` volume in compose |
 | `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | compose | Use a URL-safe password (e.g. `openssl rand -hex 24`) |
 | `POSTGRES_PORT` | compose (dev) | Host port for the dev override |
 | `SITE_ADDRESS` | Caddy | `:80` locally; the domain in production (Caddy provisions HTTPS) |
@@ -166,6 +167,11 @@ FastAPI serves OpenAPI docs at `/api/docs` outside production.
 | POST / PUT / DELETE | `/api/v1/quotes[/{id}]` | Manage quotes |
 | GET | `/api/v1/dashboard` | Deadline radar (overdue + next 30 days) and task counts |
 | GET | `/api/v1/search?q=&kind=&area=&status=` | Search tasks, projects, goals, habits and captures |
+
+| GET | `/api/v1/projects/{id}/files?view=active\|trash` | A project's files |
+| POST | `/api/v1/projects/{id}/files?filename=&replace=` | Upload; the body is the raw file. `409` + `existing` if the name is taken |
+| GET | `/api/v1/files/{id}/content` | Download (always as an attachment) |
+| PATCH / DELETE | `/api/v1/files/{id}` · POST `…/restore` | Rename, Trash and restore |
 
 | GET | `/api/v1/notes/tree` | Folders, live notes (no bodies) and tags in use |
 | POST | `/api/v1/notes` | Create a note |
@@ -245,6 +251,22 @@ Inbox; `/` lists commands. Commands are parsed deterministically in the backend
   In Chrome and Edge the folder is written into a directory you choose; elsewhere each note
   downloads separately. There is deliberately no whole-library ZIP.
 - Notes in Trash follow the same 30-day purge as everything else.
+
+### Files
+
+- Files belong to a project and appear under its tasks. Upload with the button or by dropping
+  files on the list. Each file is limited to 25 MB (checked in the browser, by Caddy and while
+  the API streams the body to disk).
+- Blobs are stored under random keys in `FILE_STORAGE_DIR` (sharded by the first two hex
+  characters); the uploaded name is display text only and never becomes a path. The API keeps
+  a SHA-256 of every blob.
+- Names are unique per project, ignoring case. Uploading a taken name asks first; replacing
+  keeps only the new version (backups may still hold older copies).
+- Downloads are always `Content-Disposition: attachment` with `nosniff`, so an uploaded HTML
+  file never renders on Ethos' own origin.
+- Deleting a file or its project moves it to Trash; restoring the project restores the files
+  trashed with it. The hourly worker pass purges expired rows and then removes blobs that no
+  row references (older than an hour, so in-flight uploads are safe).
 
 ### Records over time
 
