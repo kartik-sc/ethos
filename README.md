@@ -179,7 +179,8 @@ FastAPI serves OpenAPI docs at `/api/docs` outside production.
 | GET | `/api/v1/calendar/blocks?start=&end=` | Blocks overlapping local dates (default today) |
 | POST | `/api/v1/calendar/tasks/{id}/schedule` | One block in the earliest free slot; `409` with the reason if none |
 | POST | `/api/v1/calendar/plan` | `{horizon_days, apply}`: preview or create blocks; lists what doesn't fit |
-| DELETE | `/api/v1/calendar/blocks/{id}` | Remove an Ethos block (external events: `409`) |
+| POST | `/api/v1/calendar/refresh` | Settle past habit sessions and book today's and tomorrow's now |
+| DELETE | `/api/v1/calendar/blocks/{id}` | Remove an Ethos block (fixed blocks: `409`) |
 | POST | `/api/v1/capture` | `Authorization: Bearer eth_…`, body `{"text": …}`. Token-only; `401` otherwise |
 
 | GET | `/api/v1/notes/tree` | Folders, live notes (no bodies) and tags in use |
@@ -298,6 +299,29 @@ Inbox; `/` lists commands. Commands are parsed deterministically in the backend
   saw is deleted outright; one it has seen is kept until the deletion syncs.
 - A task in Trash hides its blocks and frees their time; purging the task deletes them.
 
+### Habit sessions
+
+A habit with a **session length** (and optionally a preferred start) gets calendar sessions.
+`app/calendar/habit_sessions.py` books and settles them; the worker runs it every heartbeat,
+and planning runs it first so task work never takes a session's time.
+
+- **Daily habits** get a session on each due day: at the preferred time if it is free and
+  still ahead, otherwise the first free slot in the working day.
+- **Weekly habits** keep their target reachable: sessions still owed this week (target minus
+  days done minus sessions booked) are spread evenly over the days left.
+- A session is **done** when that day's entry meets the habit, and **missed** once it ends
+  without one.
+- **Protected daily habit (LeetCode):** a missed session immediately gets another free slot
+  later the same day at full length (marked *recovery*). If none exists it stays missed and Home
+  shows "no free 2h slot left today". It is never shortened or moved to tomorrow. Protected
+  sessions are fixed and can't be removed.
+- **Weekly habits:** a missed session is replaced across the rest of the week, around fixed
+  commitments; sessions that cannot fit are reported.
+- **Everything else** stays missed. Removing an ordinary session cancels it for that day.
+- After a timezone, working-day or session change, sessions that haven't started are rebooked
+  at the same local clock time.
+- The migration gives the seeded LeetCode habit its 120-minute session.
+
 ### Shortcut capture
 
 Settings → Capture creates a token for a capture client such as an iPhone Shortcut. Tokens are
@@ -341,9 +365,8 @@ API; the capture endpoint already refuses anything without a live token.
   unfinished today does not break the streak. Weekly habits count consecutive weeks that hit
   their target; the current week only adds once it is met.
 - A habit starts on its creation day, or earlier if older days are backfilled.
-- The migration seeds the spec's protected daily LeetCode habit (120 min). *Protected* currently
-  means listed first and marked; enforcement against rescheduling arrives with calendar
-  scheduling in Phase 2.
+- The migration seeds the spec's protected daily LeetCode habit (120 min) with a fixed
+  two-hour calendar session; see *Habit sessions*.
 - Goals show how many habits link to them. Habit consistency is not folded into the goal's task
   percentage, because the two measure different things.
 

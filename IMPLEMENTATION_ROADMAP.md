@@ -40,8 +40,8 @@ This is the short execution checklist. The full product and technical requiremen
 - [x] Fixed-commitment protection and overload reporting. *(against Ethos blocks; Google events join once connected)*
 - [ ] Pending sync queue and visible unsynced state. *(queue state and "not synced" UI done; the Google writer needs OAuth)*
 - [ ] Conflict resolution showing both versions.
-- [ ] Daily two-hour LeetCode same-day recovery.
-- [ ] Weekly recurring-habit redistribution.
+- [x] Daily two-hour LeetCode same-day recovery.
+- [x] Weekly recurring-habit redistribution.
 - [x] Configurable timezone, default `Asia/Kolkata`.
 
 **Gate:** calendar changes do not disappear, conflicts are explicit and fixed events are protected.
